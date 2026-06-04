@@ -1,0 +1,247 @@
+import { useState } from 'react';
+import { Play, Check, AlertTriangle, ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { courseModules } from '../../data/courseData';
+
+export default function IdePage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const moduleInfo = location.state?.module || { title: 'Практика', desc: 'Завдання', id: 1 };
+
+  // Load the full module details from courseData
+  const moduleData = courseModules.find(m => m.id === moduleInfo.id) || courseModules[0];
+  const tasks = moduleData.tasks || [];
+
+  const [activeTaskIndex, setActiveTaskIndex] = useState(0);
+  const activeTask = tasks[activeTaskIndex] || { title: 'Завдання відсутнє', description: '', instructions: [], initialCode: '', id: 0 };
+
+  // Initialize code state for all tasks
+  const [codes, setCodes] = useState(() => {
+    const initial = {};
+    tasks.forEach(t => {
+      initial[t.id] = t.initialCode;
+    });
+    return initial;
+  });
+
+  // Initialize output state for all tasks
+  const [outputs, setOutputs] = useState(() => {
+    const initial = {};
+    tasks.forEach(t => {
+      initial[t.id] = "Натисніть 'Запустити', щоб скомпілювати код...";
+    });
+    return initial;
+  });
+
+  const [isRunning, setIsRunning] = useState(false);
+  const [showReference, setShowReference] = useState(false);
+
+  const handleCodeChange = (value) => {
+    setCodes(prev => ({
+      ...prev,
+      [activeTask.id]: value
+    }));
+  };
+
+  const handleRunCode = async () => {
+    setIsRunning(true);
+    setOutputs(prev => ({
+      ...prev,
+      [activeTask.id]: "Компіляція на сервері...\n"
+    }));
+    
+    try {
+      const response = await fetch('https://emkc.org/api/v2/piston/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          language: "csharp",
+          version: "*",
+          files: [{ content: codes[activeTask.id] || "" }]
+        })
+      });
+      
+      const result = await response.json();
+      let consoleOutput = "";
+      
+      if (result.compile && result.compile.code !== 0) {
+        consoleOutput = `Помилка компіляції:\n${result.compile.output}`;
+      } else {
+        consoleOutput = `Вивід програми:\n${result.run.output}\n\nКод завершення: ${result.run.code}`;
+      }
+
+      setOutputs(prev => ({
+        ...prev,
+        [activeTask.id]: consoleOutput
+      }));
+    } catch (err) {
+      setOutputs(prev => ({
+        ...prev,
+        [activeTask.id]: "Помилка підключення до сервера компілятора."
+      }));
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
+  const handleFinishTest = () => {
+    // Navigate to certificate page with completion score
+    navigate('/student/certificate', { state: { score: 100 } });
+  };
+
+  const handleTaskSwitch = (index) => {
+    setActiveTaskIndex(index);
+    setShowReference(false); // Reset reference display for the new task
+  };
+
+  return (
+    <div style={{ display: 'flex', gap: '1.5rem', height: 'calc(100vh - 120px)', minHeight: '550px' }}>
+      
+      {/* Left panel: Task Description and Navigation */}
+      <div className="glass-panel" style={{ width: '380px', padding: '1.5rem', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+        <button className="btn" style={{ background: 'transparent', color: 'var(--text-muted)', marginBottom: '1rem', padding: 0, alignSelf: 'flex-start' }} onClick={() => navigate('/student')}>
+          <ArrowLeft size={18} /> Назад до Roadmap
+        </button>
+        
+        <span style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '0.3rem' }}>
+          {moduleData.title}
+        </span>
+
+        {/* Task Steps Indicator */}
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', background: 'rgba(255,255,255,0.02)', padding: '0.4rem', borderRadius: '8px' }}>
+          {tasks.map((t, idx) => (
+            <button
+              key={t.id}
+              onClick={() => handleTaskSwitch(idx)}
+              className="btn"
+              style={{
+                flex: 1,
+                padding: '0.5rem',
+                fontSize: '0.85rem',
+                background: activeTaskIndex === idx ? 'var(--primary)' : 'transparent',
+                color: activeTaskIndex === idx ? 'white' : 'var(--text-secondary)',
+                border: 'none',
+                borderRadius: '6px'
+              }}
+            >
+              Завдання {idx + 1}
+            </button>
+          ))}
+        </div>
+
+        <h3 style={{ marginBottom: '1rem', color: 'var(--text-primary)', fontSize: '1.3rem' }}>
+          {activeTask.title}
+        </h3>
+
+        {/* Instructions Body */}
+        <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1.2rem', borderRadius: '8px', flex: 1, marginBottom: '1.5rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem', fontSize: '0.95rem' }}>
+            <strong>Опис:</strong> {activeTask.description}
+          </p>
+          <p style={{ color: 'var(--text-primary)', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Інструкції до виконання:</p>
+          <ul style={{ color: 'var(--text-muted)', paddingLeft: '1.2rem', marginBottom: 0, fontSize: '0.9rem', lineHeight: '1.6' }}>
+            {activeTask.instructions?.map((inst, index) => (
+              <li key={index} style={{ marginBottom: '0.5rem' }}>{inst}</li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Reference Solution: Shown for every 2nd task (index % 2 === 1) */}
+        {activeTaskIndex % 2 === 1 && activeTask.referenceCode && (
+          <div style={{ marginBottom: '1.5rem' }}>
+            <button 
+              className="btn" 
+              style={{ 
+                width: '100%', 
+                background: showReference ? 'var(--bg-elevated)' : 'rgba(76, 201, 240, 0.1)', 
+                color: 'var(--success)',
+                border: '1px solid var(--success)',
+                fontSize: '0.9rem'
+              }}
+              onClick={() => setShowReference(!showReference)}
+            >
+              <Eye size={16} />
+              {showReference ? 'Приховати підказку' : 'Показати зразок коду 💡'}
+            </button>
+            
+            {showReference && (
+              <div className="glass-panel animate-fade-in" style={{ marginTop: '1rem', padding: '1rem', background: '#0a080f', border: '1px solid var(--success)' }}>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}><strong>Зразок правильного коду:</strong></p>
+                <textarea 
+                  readOnly
+                  value={activeTask.referenceCode}
+                  style={{ 
+                    width: '100%', height: '200px', background: '#050407', color: '#a69bb8', 
+                    border: 'none', padding: '0.5rem', fontFamily: 'Consolas, monospace', fontSize: '13px',
+                    outline: 'none', resize: 'none', lineHeight: '1.4'
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Task Steps Navigation Footer */}
+        <div style={{ display: 'flex', gap: '1rem', marginTop: 'auto' }}>
+          {activeTaskIndex > 0 ? (
+            <button className="btn btn-secondary" style={{ flex: 1, padding: '0.8rem' }} onClick={() => handleTaskSwitch(activeTaskIndex - 1)}>
+              <ChevronLeft size={18} /> Назад
+            </button>
+          ) : (
+            <div style={{ flex: 1 }}></div>
+          )}
+
+          {activeTaskIndex < tasks.length - 1 ? (
+            <button className="btn btn-primary" style={{ flex: 1, padding: '0.8rem' }} onClick={() => handleTaskSwitch(activeTaskIndex + 1)}>
+              Далі <ChevronRight size={18} />
+            </button>
+          ) : (
+            <button className="btn btn-primary" style={{ flex: 1, padding: '0.8rem', background: 'linear-gradient(135deg, var(--success), var(--primary))', boxShadow: 'none' }} onClick={handleFinishTest}>
+              <Check size={18} /> Завершити
+            </button>
+          )}
+        </div>
+
+      </div>
+
+      {/* Right panel: Editor and Console */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        
+        {/* Editor Wrapper */}
+        <div className="glass-panel" style={{ flex: 2, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div style={{ padding: '0.8rem 1.5rem', background: 'rgba(0,0,0,0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <span style={{ fontFamily: 'monospace', color: 'var(--text-secondary)' }}>Program.cs</span>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button className="btn btn-primary" onClick={handleRunCode} disabled={isRunning} style={{ padding: '0.4rem 1rem', fontSize: '0.9rem' }}>
+                <Play size={16} />
+                {isRunning ? 'Запуск...' : 'Запустити (F5)'}
+              </button>
+            </div>
+          </div>
+          
+          <textarea 
+            value={codes[activeTask.id] || ""}
+            onChange={(e) => handleCodeChange(e.target.value)}
+            style={{ 
+              flex: 1, width: '100%', background: '#0F0C16', color: '#E0E0E0', 
+              border: 'none', padding: '1.2rem', fontFamily: 'Consolas, monospace', fontSize: '15px',
+              outline: 'none', resize: 'none', lineHeight: '1.5'
+            }}
+            spellCheck="false"
+          />
+        </div>
+
+        {/* Console / Output */}
+        <div className="glass-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div style={{ padding: '0.5rem 1.5rem', background: 'rgba(0,0,0,0.3)', borderBottom: '1px solid rgba(255,255,255,0.05)', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+            Вивід компілятора
+          </div>
+          <div style={{ padding: '1rem 1.5rem', flex: 1, background: '#0a080f', fontFamily: 'Consolas, monospace', color: isRunning ? 'var(--text-muted)' : 'var(--success)', whiteSpace: 'pre-wrap', overflowY: 'auto', fontSize: '14px', lineHeight: '1.4' }}>
+            {outputs[activeTask.id] || ""}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
