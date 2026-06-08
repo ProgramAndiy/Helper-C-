@@ -1,32 +1,103 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Check, X } from 'lucide-react';
+import { db } from '../../firebase/config';
+import { collection, doc, setDoc, getDocs, deleteDoc } from 'firebase/firestore';
 
 export default function TestManagement() {
-  const [tests, setTests] = useState([
-    { id: 1, title: 'Завдання: Value vs Reference типи', module: 'Модуль 3', author: 'Дмитро Петров', isTheory: false },
-    { id: 2, title: 'Теорія: Основи LINQ', module: 'Модуль 4', author: 'Дмитро Петров', isTheory: true }
-  ]);
-
+  const [tests, setTests] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [currentTest, setCurrentTest] = useState(null);
+
+  // Fetch tests from Firestore
+  useEffect(() => {
+    const fetchTests = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, 'tests'));
+        const list = [];
+        querySnapshot.forEach(docSnap => {
+          list.push({ id: docSnap.id, ...docSnap.data() });
+        });
+
+        // Initialize with default tests if Firestore is empty
+        if (list.length === 0) {
+          const defaults = [
+            { title: 'Завдання: Value vs Reference типи', module: 'Модуль 3', author: 'Дмитро Петров', isTheory: false, content: 'Опис практичного завдання...' },
+            { title: 'Теорія: Основи LINQ', module: 'Модуль 4', author: 'Дмитро Петров', isTheory: true, content: 'Теоретичний опис LINQ...' }
+          ];
+
+          for (const d of defaults) {
+            const newDocRef = doc(collection(db, 'tests'));
+            await setDoc(newDocRef, d);
+            list.push({ id: newDocRef.id, ...d });
+          }
+        }
+
+        setTests(list);
+      } catch (error) {
+        console.error("Error fetching tests:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTests();
+  }, []);
 
   const handleEdit = (test) => {
     setCurrentTest(test);
     setIsEditing(true);
   };
 
-  const handleDelete = (id) => {
-    setTests(tests.filter(t => t.id !== id));
+  const handleDelete = async (id) => {
+    if (!window.confirm('Ви впевнені, що хочете видалити цей матеріал?')) return;
+
+    try {
+      await deleteDoc(doc(db, 'tests', id));
+      setTests(prev => prev.filter(t => t.id !== id));
+    } catch (error) {
+      console.error("Error deleting test:", error);
+      alert('Не вдалося видалити матеріал з бази даних.');
+    }
   };
 
-  const handleSave = () => {
-    if (currentTest.id) {
-      setTests(tests.map(t => t.id === currentTest.id ? currentTest : t));
-    } else {
-      setTests([...tests, { ...currentTest, id: Date.now() }]);
+  const handleSave = async (e) => {
+    e.preventDefault();
+    if (!currentTest.title.trim()) return;
+
+    try {
+      if (currentTest.id) {
+        // Edit existing test
+        const testRef = doc(db, 'tests', currentTest.id);
+        const updatedData = {
+          title: currentTest.title,
+          module: currentTest.module,
+          author: currentTest.author,
+          isTheory: currentTest.isTheory,
+          content: currentTest.content || ''
+        };
+        await setDoc(testRef, updatedData);
+        setTests(prev => prev.map(t => t.id === currentTest.id ? currentTest : t));
+      } else {
+        // Create new test
+        const newRef = doc(collection(db, 'tests'));
+        const newTestData = {
+          title: currentTest.title,
+          module: currentTest.module,
+          author: currentTest.author,
+          isTheory: currentTest.isTheory,
+          content: currentTest.content || ''
+        };
+        await setDoc(newRef, newTestData);
+        setTests(prev => [...prev, { ...newTestData, id: newRef.id }]);
+      }
+
+      setIsEditing(false);
+      setCurrentTest(null);
+    } catch (error) {
+      console.error("Error saving test:", error);
+      alert('Не вдалося зберегти матеріал у базу даних.');
     }
-    setIsEditing(false);
-    setCurrentTest(null);
   };
 
   const handleAdd = () => {
@@ -55,7 +126,13 @@ export default function TestManagement() {
             </tr>
           </thead>
           <tbody>
-            {tests.map(test => (
+            {loading ? (
+              <tr>
+                <td colSpan="5" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                  Завантаження списку матеріалів...
+                </td>
+              </tr>
+            ) : tests.length > 0 ? tests.map(test => (
               <tr key={test.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                 <td style={{ padding: '1rem' }}>{test.title}</td>
                 <td style={{ padding: '1rem' }}>
@@ -74,7 +151,13 @@ export default function TestManagement() {
                   </button>
                 </td>
               </tr>
-            ))}
+            )) : (
+              <tr>
+                <td colSpan="5" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  Матеріалів не знайдено
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -82,13 +165,13 @@ export default function TestManagement() {
       {/* Editor Modal Overlay */}
       {isEditing && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="glass-panel" style={{ width: '100%', maxWidth: '600px', padding: '2rem' }}>
+          <form onSubmit={handleSave} className="glass-panel" style={{ width: '100%', maxWidth: '600px', padding: '2rem' }}>
             <h3 style={{ marginBottom: '1.5rem' }}>{currentTest.id ? 'Редагувати матеріал' : 'Створити матеріал'}</h3>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
                 <label className="input-label">Назва завдання / лекції</label>
-                <input type="text" className="input-field" value={currentTest.title} onChange={e => setCurrentTest({...currentTest, title: e.target.value})} />
+                <input type="text" className="input-field" value={currentTest.title} onChange={e => setCurrentTest({...currentTest, title: e.target.value})} required />
               </div>
               
               <div style={{ display: 'flex', gap: '1rem' }}>
@@ -116,15 +199,15 @@ export default function TestManagement() {
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
-                <button className="btn btn-secondary" onClick={() => setIsEditing(false)}>
+                <button type="button" className="btn btn-secondary" onClick={() => setIsEditing(false)}>
                   <X size={18} /> Скасувати
                 </button>
-                <button className="btn btn-primary" onClick={handleSave}>
+                <button type="submit" className="btn btn-primary">
                   <Check size={18} /> Зберегти
                 </button>
               </div>
             </div>
-          </div>
+          </form>
         </div>
       )}
     </div>

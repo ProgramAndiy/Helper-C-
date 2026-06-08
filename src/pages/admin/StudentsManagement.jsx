@@ -1,22 +1,49 @@
-import { useState } from 'react';
-import { Search, UserCheck, UserX, BarChart2, MoreVertical, Plus, Download, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, BarChart2, MoreVertical, Plus, Download, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { db } from '../../firebase/config';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 export default function StudentsManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('');
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
-  const initialStudents = [
-    { id: 1, name: 'Іван Франко', group: 'ІП-31', progress: 45, status: 'active', lastActive: '10 хвилин тому' },
-    { id: 2, name: 'Леся Українка', group: 'ІП-31', progress: 92, status: 'active', lastActive: '2 години тому' },
-    { id: 3, name: 'Тарас Шевченко', group: 'ІП-32', progress: 15, status: 'inactive', lastActive: '5 днів тому' },
-    { id: 4, name: 'Григорій Сковорода', group: 'ІП-33', progress: 100, status: 'completed', lastActive: 'Вчора' },
-    { id: 5, name: 'Михайло Коцюбинський', group: 'ІП-32', progress: 68, status: 'active', lastActive: 'Сьогодні' },
-    { id: 6, name: 'Ліна Костенко', group: 'ІП-33', progress: 85, status: 'active', lastActive: '1 годину тому' },
-    { id: 7, name: 'Василь Стус', group: 'ІП-31', progress: 5, status: 'inactive', lastActive: '2 тижні тому' },
-  ];
+  const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredStudents = initialStudents.filter(s => {
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        const q = query(collection(db, 'users'), where('role', '==', 'student'));
+        const querySnapshot = await getDocs(q);
+        const list = [];
+        
+        querySnapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          const fullName = `${data.lastName || ''} ${data.firstName || ''} ${data.middleName || ''}`.trim();
+          
+          list.push({
+            id: docSnap.id,
+            name: fullName || data.email || 'Студент',
+            group: data.group || 'Не вказано',
+            progress: data.progress || 0,
+            status: data.status || 'active',
+            lastActive: data.lastActive || 'Нещодавно'
+          });
+        });
+        
+        setStudents(list);
+      } catch (error) {
+        console.error("Error fetching students:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStudents();
+  }, []);
+
+  const filteredStudents = students.filter(s => {
     const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesGroup = selectedGroup === '' || s.group.toLowerCase().includes(selectedGroup.toLowerCase());
     return matchesSearch && matchesGroup;
@@ -70,7 +97,13 @@ export default function StudentsManagement() {
             </tr>
           </thead>
           <tbody>
-            {filteredStudents.length > 0 ? filteredStudents.map(student => (
+            {loading ? (
+              <tr>
+                <td colSpan="5" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                  Завантаження списку студентів...
+                </td>
+              </tr>
+            ) : filteredStudents.length > 0 ? filteredStudents.map(student => (
               <tr key={student.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }} className="hover-highlight">
                 <td style={{ padding: '1rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>

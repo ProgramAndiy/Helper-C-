@@ -1,23 +1,76 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Mail, School, Users, Save } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { db } from '../../firebase/config';
+import { doc, setDoc } from 'firebase/firestore';
 
 export default function ProfilePage() {
+  const { currentUser, userData, setUserData } = useAuth();
+
   const [profile, setProfile] = useState({
-    lastName: 'Шевченко',
-    firstName: 'Тарас',
-    middleName: 'Григорович',
-    email: 'student@helper.com',
-    university: 'НТУУ КПІ ім. І. Сікорського',
-    year: '2023',
-    group: 'ІП-31'
+    lastName: '',
+    firstName: '',
+    middleName: '',
+    email: '',
+    university: '',
+    year: '',
+    group: ''
   });
 
   const [isSaved, setIsSaved] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSave = (e) => {
+  // Load current user profile data when context is loaded
+  useEffect(() => {
+    if (userData) {
+      setProfile({
+        lastName: userData.lastName || '',
+        firstName: userData.firstName || '',
+        middleName: userData.middleName || '',
+        email: userData.email || currentUser?.email || '',
+        university: userData.university || '',
+        year: userData.year || userData.admissionYear || '',
+        group: userData.group || ''
+      });
+    } else if (currentUser) {
+      setProfile(prev => ({
+        ...prev,
+        email: currentUser.email || ''
+      }));
+    }
+  }, [userData, currentUser]);
+
+  const handleSave = async (e) => {
     e.preventDefault();
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 3000);
+    setIsSaved(false);
+    setErrorMsg('');
+
+    if (!currentUser) return;
+
+    try {
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      const updatedData = {
+        ...userData,
+        uid: currentUser.uid,
+        email: profile.email,
+        lastName: profile.lastName,
+        firstName: profile.firstName,
+        middleName: profile.middleName,
+        university: profile.university,
+        year: profile.year,
+        admissionYear: profile.year, // keep both names for safety
+        group: profile.group,
+        role: userData?.role || 'student' // preserve role
+      };
+
+      await setDoc(userDocRef, updatedData);
+      setUserData(updatedData); // Update context state
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 3000);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      setErrorMsg("Не вдалося зберегти зміни. Перевірте з'єднання з базою даних.");
+    }
   };
 
   return (
@@ -51,10 +104,12 @@ export default function ProfilePage() {
 
           <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.1)', margin: '1rem 0' }} />
 
+          {errorMsg && <div style={{ color: 'var(--danger)', fontSize: '0.9rem', textAlign: 'center' }}>{errorMsg}</div>}
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
             <div>
               <label className="input-label"><Mail size={16} style={{ display: 'inline', marginRight: '0.5rem', verticalAlign: 'text-bottom' }} /> Email</label>
-              <input type="email" className="input-field" value={profile.email} onChange={e => setProfile({...profile, email: e.target.value})} required />
+              <input type="email" className="input-field" value={profile.email} onChange={e => setProfile({...profile, email: e.target.value})} required disabled />
             </div>
             <div>
               <label className="input-label"><School size={16} style={{ display: 'inline', marginRight: '0.5rem', verticalAlign: 'text-bottom' }} /> Навчальний заклад</label>
