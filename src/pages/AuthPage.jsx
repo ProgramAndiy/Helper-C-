@@ -6,6 +6,31 @@ import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPass
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
 
+const getFriendlyErrorMessage = (error) => {
+  const code = error.code || '';
+  switch (code) {
+    case 'auth/email-already-in-use':
+      return 'Ця електронна адреса вже зареєстрована. Будь ласка, перейдіть на вкладку "Увійти" або скористайтеся іншою адресою.';
+    case 'auth/invalid-email':
+      return 'Некоректний формат електронної адреси.';
+    case 'auth/weak-password':
+      return 'Пароль занадто короткий. Він має містити щонайменше 6 символів.';
+    case 'auth/wrong-password':
+    case 'auth/user-not-found':
+    case 'auth/invalid-credential':
+      return 'Неправильна електронна адреса або пароль.';
+    case 'auth/popup-closed-by-user':
+      return 'Вхід скасовано (вікно авторизації закрилося).';
+    case 'auth/operation-not-allowed':
+      return 'Цей метод входу наразі вимкнено у консолі Firebase.';
+    default:
+      if (error.message && error.message.includes('auth/email-already-in-use')) {
+        return 'Ця електронна адреса вже зареєстрована. Будь ласка, перейдіть на вкладку "Увійти" або скористайтеся іншою адресою.';
+      }
+      return error.message || 'Сталася помилка при авторизації. Спробуйте ще раз.';
+  }
+};
+
 export default function AuthPage() {
   const navigate = useNavigate();
   const [role, setRole] = useState('student');
@@ -60,7 +85,7 @@ export default function AuthPage() {
       if (role === 'admin') navigate('/admin');
       else navigate('/student');
     } catch (error) {
-      setErrorMsg(error.message);
+      setErrorMsg(getFriendlyErrorMessage(error));
     }
   };
 
@@ -88,7 +113,7 @@ export default function AuthPage() {
       if (finalRole === 'admin') navigate('/admin');
       else navigate('/student');
     } catch (error) {
-      setErrorMsg(error.message);
+      setErrorMsg(getFriendlyErrorMessage(error));
     }
   };
 
@@ -116,7 +141,7 @@ export default function AuthPage() {
       if (finalRole === 'admin') navigate('/admin');
       else navigate('/student');
     } catch (error) {
-      setErrorMsg(error.message);
+      setErrorMsg(getFriendlyErrorMessage(error));
     }
   };
 
