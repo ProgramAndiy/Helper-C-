@@ -3,12 +3,22 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, BookOpen, Settings, LogOut, Code, Menu, X } from 'lucide-react';
 import { auth } from '../firebase/config';
 import { signOut } from 'firebase/auth';
+import { useAuth } from '../context/AuthContext';
 
 export default function MainLayout({ role }) {
   const location = useLocation();
   const navigate = useNavigate();
   const isAdmin = role === 'admin';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { userData } = useAuth();
+  
+  const displayName = userData?.firstName 
+    ? `${userData.firstName}` 
+    : (isAdmin ? 'Викладач' : 'Студент');
+    
+  const avatarLetter = userData?.firstName 
+    ? userData.firstName.charAt(0).toUpperCase() 
+    : (isAdmin ? 'В' : 'С');
 
   // Close menu on route change
   useEffect(() => {
@@ -88,10 +98,10 @@ export default function MainLayout({ role }) {
           <Link to={isAdmin ? "/admin/settings" : "/student/profile"} style={{ textDecoration: 'none' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer' }}>
               <span style={{ color: 'var(--text-secondary)' }}>
-                {isAdmin ? 'Викладач' : 'Студент'}
+                {displayName}
               </span>
               <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: 'white' }}>
-                {isAdmin ? 'В' : 'С'}
+                {avatarLetter}
               </div>
             </div>
           </Link>

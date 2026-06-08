@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, UserCircle, Code, BookOpen } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { courseModules } from '../../data/courseData';
+import { db } from '../../firebase/config';
+import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 
 export default function LessonPage() {
   const navigate = useNavigate();
@@ -14,6 +16,29 @@ export default function LessonPage() {
   const [activeTopicId, setActiveTopicId] = useState(topics[0]?.id || '');
 
   const activeTopic = topics.find(t => t.id === activeTopicId) || topics[0];
+
+  const [teacherName, setTeacherName] = useState('Дмитро Петров');
+
+  useEffect(() => {
+    const fetchTeacher = async () => {
+      try {
+        const q = query(collection(db, 'users'), where('role', '==', 'admin'), limit(1));
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+          const teacherData = querySnapshot.docs[0].data();
+          const fullName = `${teacherData.lastName || ''} ${teacherData.firstName || ''}`.trim();
+          if (fullName) {
+            setTeacherName(fullName);
+          } else if (teacherData.email) {
+            setTeacherName(teacherData.email);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching teacher:", err);
+      }
+    };
+    fetchTeacher();
+  }, []);
 
   return (
     <div style={{ maxWidth: '1100px', margin: '0 auto', paddingBottom: '4rem' }}>
@@ -29,7 +54,7 @@ export default function LessonPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', background: 'rgba(255,255,255,0.05)', padding: '0.8rem 1rem', borderRadius: '8px', display: 'inline-flex' }}>
           <UserCircle size={24} color="var(--primary)" />
           <span style={{ color: 'var(--text-secondary)' }}>
-            Теорію та тести надано викладачем: <strong style={{ color: 'var(--text-primary)' }}>Дмитро Петров</strong>
+            Теорію та тести надано викладачем: <strong style={{ color: 'var(--text-primary)' }}>{teacherName}</strong>
           </span>
         </div>
       </div>

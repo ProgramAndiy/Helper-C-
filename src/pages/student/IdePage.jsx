@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { Play, Check, AlertTriangle, ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { courseModules } from '../../data/courseData';
+import { useAuth } from '../../context/AuthContext';
+import { db } from '../../firebase/config';
+import { doc, setDoc } from 'firebase/firestore';
 
 export default function IdePage() {
   const navigate = useNavigate();
@@ -12,6 +15,7 @@ export default function IdePage() {
   const moduleData = courseModules.find(m => m.id === moduleInfo.id) || courseModules[0];
   const tasks = moduleData.tasks || [];
 
+  const { currentUser, userData, setUserData } = useAuth();
   const [activeTaskIndex, setActiveTaskIndex] = useState(0);
   const activeTask = tasks[activeTaskIndex] || { title: 'Завдання відсутнє', description: '', instructions: [], initialCode: '', id: 0 };
 
@@ -84,7 +88,31 @@ export default function IdePage() {
     }
   };
 
-  const handleFinishTest = () => {
+  const handleFinishTest = async () => {
+    if (currentUser) {
+      try {
+        const completedModules = userData?.completedModules || [];
+        if (!completedModules.includes(moduleData.id)) {
+          const newCompleted = [...completedModules, moduleData.id];
+          const newProgress = Math.round((newCompleted.length / courseModules.length) * 100);
+          
+          const userDocRef = doc(db, 'users', currentUser.uid);
+          const updatedData = {
+            ...userData,
+            uid: currentUser.uid,
+            email: currentUser.email,
+            completedModules: newCompleted,
+            progress: newProgress,
+            role: userData?.role || 'student'
+          };
+          
+          await setDoc(userDocRef, updatedData);
+          setUserData(updatedData);
+        }
+      } catch (error) {
+        console.error("Error saving student progress:", error);
+      }
+    }
     // Navigate to certificate page with completion score
     navigate('/student/certificate', { state: { score: 100 } });
   };

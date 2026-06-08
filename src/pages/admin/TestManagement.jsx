@@ -2,12 +2,19 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Check, X } from 'lucide-react';
 import { db } from '../../firebase/config';
 import { collection, doc, setDoc, getDocs, deleteDoc } from 'firebase/firestore';
+import { useAuth } from '../../context/AuthContext';
 
 export default function TestManagement() {
   const [tests, setTests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [currentTest, setCurrentTest] = useState(null);
+
+  const { userData, currentUser } = useAuth();
+
+  const teacherName = userData 
+    ? `${userData.lastName || ''} ${userData.firstName || ''}`.trim() || userData.email || 'Викладач'
+    : currentUser?.email || 'Викладач';
 
   // Fetch tests from Firestore
   useEffect(() => {
@@ -22,8 +29,8 @@ export default function TestManagement() {
         // Initialize with default tests if Firestore is empty
         if (list.length === 0) {
           const defaults = [
-            { title: 'Завдання: Value vs Reference типи', module: 'Модуль 3', author: 'Дмитро Петров', isTheory: false, content: 'Опис практичного завдання...' },
-            { title: 'Теорія: Основи LINQ', module: 'Модуль 4', author: 'Дмитро Петров', isTheory: true, content: 'Теоретичний опис LINQ...' }
+            { title: 'Завдання: Value vs Reference типи', module: 'Модуль 3', author: teacherName, isTheory: false, content: 'Опис практичного завдання...' },
+            { title: 'Теорія: Основи LINQ', module: 'Модуль 4', author: teacherName, isTheory: true, content: 'Теоретичний опис LINQ...' }
           ];
 
           for (const d of defaults) {
@@ -101,7 +108,7 @@ export default function TestManagement() {
   };
 
   const handleAdd = () => {
-    setCurrentTest({ title: '', module: 'Модуль 1', author: 'Дмитро Петров', isTheory: false, content: '' });
+    setCurrentTest({ title: '', module: 'Модуль 1', author: teacherName, isTheory: false, content: '' });
     setIsEditing(true);
   };
 

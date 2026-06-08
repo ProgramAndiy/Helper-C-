@@ -1,10 +1,25 @@
 import { CheckCircle, Lock, PlayCircle, Award, Code, BookOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { courseModules } from '../../data/courseData';
+import { useAuth } from '../../context/AuthContext';
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
-  const modules = courseModules;
+  const { userData } = useAuth();
+
+  const completedModules = userData?.completedModules || [];
+  
+  const modules = courseModules.map((mod, index) => {
+    let status = 'locked';
+    if (completedModules.includes(mod.id)) {
+      status = 'completed';
+    } else if (index === 0 || completedModules.includes(courseModules[index - 1]?.id)) {
+      status = 'in-progress';
+    }
+    return { ...mod, status };
+  });
+
+  const progressPercent = Math.round((completedModules.length / courseModules.length) * 100);
 
   return (
     <div>
@@ -12,7 +27,7 @@ export default function StudentDashboard() {
         <h2>Дерево Навичок (Skill Tree)</h2>
         <div className="glass-panel" style={{ padding: '0.8rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--success)' }}>
           <Award size={20} />
-          <span style={{ fontWeight: 'bold' }}>Сертифікат: 33% пройдено</span>
+          <span style={{ fontWeight: 'bold' }}>Сертифікат: {progressPercent}% пройдено</span>
         </div>
       </div>
       
