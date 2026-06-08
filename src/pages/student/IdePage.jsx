@@ -54,9 +54,18 @@ export default function IdePage() {
       [activeTask.id]: "Компіляція на сервері...\n"
     }));
     
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    
+    const getCompilerUrl = (path) => {
+      const targetUrl = `https://api.paiza.io/${path}`;
+      return isLocal 
+        ? `/api-compiler/${path}` 
+        : `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+    };
+
     try {
       // Create execution runner via Paiza.io
-      const createResponse = await fetch('https://api.paiza.io/runners/create', {
+      const createResponse = await fetch(getCompilerUrl('runners/create'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -83,7 +92,7 @@ export default function IdePage() {
 
       while (!completed && attempts < 10) {
         attempts++;
-        const statusResponse = await fetch(`https://api.paiza.io/runners/get_details?id=${runId}&api_key=guest`);
+        const statusResponse = await fetch(getCompilerUrl(`runners/get_details?id=${runId}&api_key=guest`));
         details = await statusResponse.json();
         
         if (details.status === "completed") {
