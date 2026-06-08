@@ -46,7 +46,7 @@ export default function CertificatePage() {
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
-        justify-content: 'space-between',
+        justifyContent: 'space-between',
         boxSizing: 'border-box'
       }}>
         {/* Decorative elements */}
