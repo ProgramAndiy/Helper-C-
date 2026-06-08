@@ -132,8 +132,17 @@ export default function IdePage() {
   };
 
   const handleFinishTest = () => {
+    let quizScore = 100;
     if (currentUser) {
       const completedModules = userData?.completedModules || [];
+      
+      // Get the score of the quiz for this module
+      const quizAttempts = userData?.quizAttempts || {};
+      const moduleAttempt = quizAttempts[`module_${moduleData.id}`];
+      if (moduleAttempt) {
+        quizScore = moduleAttempt.score;
+      }
+
       if (!completedModules.includes(moduleData.id)) {
         const newCompleted = [...completedModules, moduleData.id];
         const newProgress = Math.round((newCompleted.length / courseModules.length) * 100);
@@ -159,8 +168,8 @@ export default function IdePage() {
       }
     }
     
-    // Navigate immediately to prevent hangs or UI blocks
-    navigate('/student/certificate', { state: { score: 100 } });
+    // Navigate immediately to prevent hangs or UI blocks with the actual quiz score
+    navigate('/student/certificate', { state: { score: quizScore } });
   };
 
   const handleTaskSwitch = (index) => {

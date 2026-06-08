@@ -20,9 +20,15 @@ export function AuthProvider({ children }) {
       setCurrentUser(user);
       if (user) {
         try {
-          // Fetch custom role or extra data from Firestore
+          // Fetch custom role or extra data from Firestore with a 3-second timeout
           const userDocRef = doc(db, 'users', user.uid);
-          const userDocSnap = await getDoc(userDocRef);
+          
+          const fetchPromise = getDoc(userDocRef);
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("User doc fetch timed out")), 3000)
+          );
+          
+          const userDocSnap = await Promise.race([fetchPromise, timeoutPromise]);
           
           if (userDocSnap.exists()) {
             const data = userDocSnap.data();

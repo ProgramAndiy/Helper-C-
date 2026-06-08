@@ -13,6 +13,7 @@ import IdePage from './pages/student/IdePage';
 import CertificatePage from './pages/student/CertificatePage';
 import ProfilePage from './pages/student/ProfilePage';
 import MainLayout from './components/MainLayout';
+import QuizPage from './pages/student/QuizPage';
 import { AuthProvider } from './context/AuthContext';
 import './index.scss';
 
@@ -39,6 +40,7 @@ function App() {
             <Route index element={<StudentDashboard />} />
             <Route path="lesson" element={<LessonPage />} />
             <Route path="ide" element={<IdePage />} />
+            <Route path="quiz" element={<QuizPage />} />
             <Route path="certificate" element={<CertificatePage />} />
             <Route path="profile" element={<ProfilePage />} />
           </Route>

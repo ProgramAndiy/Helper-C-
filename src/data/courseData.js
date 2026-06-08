@@ -62,6 +62,20 @@ foreach (int num in numbers) {
         `
       }
     ],
+    quizzes: [
+      {
+        id: "q1_1",
+        question: "Який тип даних використовується для збереження логічних значень true або false?",
+        options: ["int", "string", "bool", "double"],
+        correctAnswerIndex: 2
+      },
+      {
+        id: "q1_2",
+        question: "Який цикл виконується хоча б один раз, навіть якщо початкова умова є хибною?",
+        options: ["for", "while", "do while", "foreach"],
+        correctAnswerIndex: 2
+      }
+    ],
     tasks: [
       {
         id: 1,
@@ -181,6 +195,20 @@ person.Introduce();</pre>
         `
       }
     ],
+    quizzes: [
+      {
+        id: "q2_1",
+        question: "Який принцип ООП полягає у приховуванні деталей реалізації та обмеженні прямого доступу до даних?",
+        options: ["Успадкування", "Поліморфізм", "Інкапсуляція", "Абстракція"],
+        correctAnswerIndex: 2
+      },
+      {
+        id: "q2_2",
+        question: "Який оператор використовується у C# для успадкування класу від іншого класу?",
+        options: ["extends", ":", "implements", "base"],
+        correctAnswerIndex: 1
+      }
+    ],
     tasks: [
       {
         id: 1,
@@ -287,6 +315,20 @@ namespace HelperPlatform
             <li><strong>Класи (class):</strong> Посилальні типи. Копіюють лише посилання на купу. Зміна об'єкта через копію посилання змінить дані і в оригіналі, бо посилання вказують на одну адресу.</li>
           </ul>
         `
+      }
+    ],
+    quizzes: [
+      {
+        id: "q3_1",
+        question: "Де зазвичай зберігаються змінні значимих типів (Value Types) у C#?",
+        options: ["У стеку (Stack)", "У купі (Heap)", "У файлі конфігурації", "У статичній пам'яті"],
+        correctAnswerIndex: 0
+      },
+      {
+        id: "q3_2",
+        question: "Що таке Garbage Collector (Збирач сміття) у .NET?",
+        options: ["Утиліта для очищення жорсткого диска", "Автоматична система керування пам'яттю", "Інструмент для видалення старого коду", "Комп'ютерний вірус"],
+        correctAnswerIndex: 1
       }
     ],
     tasks: [

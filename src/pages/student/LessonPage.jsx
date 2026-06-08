@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, UserCircle, Code, BookOpen } from 'lucide-react';
+import { ArrowLeft, UserCircle, Code, BookOpen, ArrowRight } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { courseModules } from '../../data/courseData';
 import { db } from '../../firebase/config';
@@ -106,11 +106,10 @@ export default function LessonPage() {
             </div>
           )}
 
-          {/* Action to Practice */}
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <button className="btn btn-primary" style={{ padding: '1rem 2rem', fontSize: '1.1rem' }} onClick={() => navigate('/student/ide', { state: { module: moduleData } })}>
-              <Code size={20} />
-              Перейти до практичного тесту (IDE)
+            <button className="btn btn-primary" style={{ padding: '1rem 2rem', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => navigate('/student/quiz', { state: { module: moduleData } })}>
+              <span>Перейти до тестування</span>
+              <ArrowRight size={20} />
             </button>
           </div>
         </div>
