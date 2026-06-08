@@ -47,7 +47,7 @@ export default function AuthPage() {
   const [admissionYear, setAdmissionYear] = useState('');
   const [group, setGroup] = useState('');
   
-  const { setUserRole } = useAuth();
+  const { setUserRole, setUserData } = useAuth();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -79,6 +79,7 @@ export default function AuthPage() {
         }
 
         await setDoc(userDocRef, userData);
+        setUserData(userData);
         setUserRole(role);
       }
       
