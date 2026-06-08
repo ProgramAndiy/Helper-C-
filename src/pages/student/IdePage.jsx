@@ -55,23 +55,57 @@ export default function IdePage() {
     }));
     
     try {
-      const response = await fetch('https://emkc.org/api/v2/piston/execute', {
+      // Create execution runner via Paiza.io
+      const createResponse = await fetch('https://api.paiza.io/runners/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          source_code: codes[activeTask.id] || "",
           language: "csharp",
-          version: "*",
-          files: [{ content: codes[activeTask.id] || "" }]
+          input: "",
+          longpoll: true,
+          longpoll_timeout: 10,
+          api_key: "guest"
         })
       });
       
-      const result = await response.json();
-      let consoleOutput = "";
+      const createData = await createResponse.json();
+      const runId = createData.id;
       
-      if (result.compile && result.compile.code !== 0) {
-        consoleOutput = `Помилка компіляції:\n${result.compile.output}`;
+      if (!runId) {
+        throw new Error("Не вдалося ініціалізувати компілятор.");
+      }
+
+      // Poll for compilation and execution details
+      let completed = false;
+      let attempts = 0;
+      let details = null;
+
+      while (!completed && attempts < 10) {
+        attempts++;
+        const statusResponse = await fetch(`https://api.paiza.io/runners/get_details?id=${runId}&api_key=guest`);
+        details = await statusResponse.json();
+        
+        if (details.status === "completed") {
+          completed = true;
+        } else {
+          await new Promise(r => setTimeout(r, 1000));
+        }
+      }
+
+      if (!details || details.status !== "completed") {
+        throw new Error("Перевищено час очікування компіляції.");
+      }
+
+      let consoleOutput = "";
+      if (details.build_result === "failure") {
+        consoleOutput = `Помилка компіляції:\n${details.build_stderr}`;
       } else {
-        consoleOutput = `Вивід програми:\n${result.run.output}\n\nКод завершення: ${result.run.code}`;
+        consoleOutput = `Вивід програми:\n${details.stdout}`;
+        if (details.stderr) {
+          consoleOutput += `\nПомилка виконання:\n${details.stderr}`;
+        }
+        consoleOutput += `\n\nКод завершення: ${details.exit_code}`;
       }
 
       setOutputs(prev => ({
@@ -81,39 +115,42 @@ export default function IdePage() {
     } catch (err) {
       setOutputs(prev => ({
         ...prev,
-        [activeTask.id]: "Помилка підключення до сервера компілятора."
+        [activeTask.id]: `Помилка: ${err.message || "Не вдалося з'єднатися з сервером компілятора."}`
       }));
     } finally {
       setIsRunning(false);
     }
   };
 
-  const handleFinishTest = async () => {
+  const handleFinishTest = () => {
     if (currentUser) {
-      try {
-        const completedModules = userData?.completedModules || [];
-        if (!completedModules.includes(moduleData.id)) {
-          const newCompleted = [...completedModules, moduleData.id];
-          const newProgress = Math.round((newCompleted.length / courseModules.length) * 100);
-          
-          const userDocRef = doc(db, 'users', currentUser.uid);
-          const updatedData = {
-            ...userData,
-            uid: currentUser.uid,
-            email: currentUser.email,
-            completedModules: newCompleted,
-            progress: newProgress,
-            role: userData?.role || 'student'
-          };
-          
-          await setDoc(userDocRef, updatedData);
-          setUserData(updatedData);
-        }
-      } catch (error) {
-        console.error("Error saving student progress:", error);
+      const completedModules = userData?.completedModules || [];
+      if (!completedModules.includes(moduleData.id)) {
+        const newCompleted = [...completedModules, moduleData.id];
+        const newProgress = Math.round((newCompleted.length / courseModules.length) * 100);
+        
+        const updatedData = {
+          ...userData,
+          uid: currentUser.uid,
+          email: currentUser.email || '',
+          completedModules: newCompleted,
+          progress: newProgress,
+          role: userData?.role || 'student'
+        };
+        
+        // Update Firestore in the background so the user is not blocked
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        setDoc(userDocRef, updatedData)
+          .then(() => {
+            setUserData(updatedData);
+          })
+          .catch((error) => {
+            console.error("Error saving student progress:", error);
+          });
       }
     }
-    // Navigate to certificate page with completion score
+    
+    // Navigate immediately to prevent hangs or UI blocks
     navigate('/student/certificate', { state: { score: 100 } });
   };
 
