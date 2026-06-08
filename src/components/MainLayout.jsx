@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, BookOpen, Settings, LogOut, Code, Menu, X } from 'lucide-react';
+import { auth } from '../firebase/config';
+import { signOut } from 'firebase/auth';
 
 export default function MainLayout({ role }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const isAdmin = role === 'admin';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -11,6 +14,15 @@ export default function MainLayout({ role }) {
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate('/login');
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
 
   const navItems = isAdmin ? [
     { name: 'Дашборд', path: '/admin', icon: <LayoutDashboard size={20} /> },
@@ -52,10 +64,10 @@ export default function MainLayout({ role }) {
             </Link>
           ))}
           <div style={{ flexGrow: 1 }} />
-          <Link to="/auth" className="nav-item" style={{ marginTop: 'auto' }}>
+          <div onClick={handleLogout} className="nav-item" style={{ marginTop: 'auto', cursor: 'pointer' }}>
             <LogOut size={20} />
             <span>Вийти</span>
-          </Link>
+          </div>
         </nav>
       </aside>
 
