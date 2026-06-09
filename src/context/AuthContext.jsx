@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { auth, db } from '../firebase/config';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 
 const AuthContext = createContext();
 
@@ -11,48 +11,51 @@ export function useAuth() {
 
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
-  const [userRole, setUserRole] = useState(null); // 'student' or 'admin'
-  const [userData, setUserData] = useState(null); // Full user profile from Firestore
+  const [userRole, setUserRole] = useState(null);
+  const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    let unsubscribeDoc = null;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
+      
       if (user) {
-        try {
-          // Fetch custom role or extra data from Firestore with a 3-second timeout
-          const userDocRef = doc(db, 'users', user.uid);
-          
-          const fetchPromise = getDoc(userDocRef);
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error("User doc fetch timed out")), 3000)
-          );
-          
-          const userDocSnap = await Promise.race([fetchPromise, timeoutPromise]);
-          
-          if (userDocSnap.exists()) {
-            const data = userDocSnap.data();
+        const userDocRef = doc(db, 'users', user.uid);
+        
+        // Listen to document changes directly. This instantly returns cached data if available,
+        // preventing empty profiles and UI hanging on slow networks.
+        unsubscribeDoc = onSnapshot(userDocRef, (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
             setUserData(data);
             setUserRole(data.role || 'student');
           } else {
-            // Defaults to student if not in DB yet (e.g., just signed up)
             setUserRole('student');
             setUserData(null);
           }
-        } catch (error) {
-          console.error("Error fetching user role from Firestore:", error);
-          // Default to student if offline or error occurs so app still loads
+          setLoading(false);
+        }, (error) => {
+          console.error("Error fetching user from Firestore:", error);
           setUserRole('student');
-          setUserData(null);
-        }
+          setLoading(false);
+        });
       } else {
         setUserRole(null);
         setUserData(null);
+        setLoading(false);
+        if (unsubscribeDoc) {
+          unsubscribeDoc();
+          unsubscribeDoc = null;
+        }
       }
-      setLoading(false);
     });
 
-    return unsubscribe;
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeDoc) unsubscribeDoc();
+    };
   }, []);
 
   const value = {
