@@ -18,7 +18,7 @@ export default function StudentDashboard() {
         // Use a 3-second timeout to prevent hanging when offline/blocked
         const fetchPromise = getDocs(collection(db, 'modules'));
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Firestore fetch timed out")), 3000)
+          setTimeout(() => reject(new Error("Firestore fetch timed out")), 2000)
         );
 
         const querySnapshot = await Promise.race([fetchPromise, timeoutPromise]);
@@ -35,21 +35,16 @@ export default function StudentDashboard() {
             order: index + 1
           }));
 
-          for (const d of defaults) {
-            delete d.status; // Remove static status
+          // Set list immediately to render without freezing
+          list = defaults;
+
+          // Seed in background without awaiting the whole loop
+          defaults.forEach(d => {
+            const dataToSave = { ...d };
+            delete dataToSave.status; // Remove static status
             const newDocRef = doc(db, 'modules', `module_${d.id}`);
-            // Use a non-blocking background save or timeout-guarded save for seeding
-            const seedPromise = setDoc(newDocRef, d);
-            const seedTimeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error("Seeding timed out")), 2000)
-            );
-            try {
-              await Promise.race([seedPromise, seedTimeoutPromise]);
-            } catch (seedErr) {
-              console.warn(`Failed to seed module_${d.id}:`, seedErr);
-            }
-            list.push({ docId: newDocRef.id, ...d });
-          }
+            setDoc(newDocRef, dataToSave).catch(err => console.warn(`Failed to seed module_${d.id}:`, err));
+          });
         }
 
         // Sort by order
@@ -57,6 +52,7 @@ export default function StudentDashboard() {
         setDbModules(list);
       } catch (err) {
         console.error("Error fetching modules from Firestore:", err);
+        // Fallback to local data immediately on timeout/error
         setDbModules(courseModules);
       } finally {
         setLoading(false);

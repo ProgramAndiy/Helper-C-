@@ -63,7 +63,7 @@ export default function ProfilePage() {
         role: userData?.role || 'student' // preserve role
       };
 
-      await setDoc(userDocRef, updatedData);
+      await setDoc(userDocRef, updatedData, { merge: true });
       setUserData(updatedData); // Update context state
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 3000);

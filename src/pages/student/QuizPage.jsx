@@ -85,7 +85,7 @@ export default function QuizPage() {
             role: userData?.role || 'student'
           };
 
-          await setDoc(userDocRef, updatedData);
+          await setDoc(userDocRef, updatedData, { merge: true });
           setUserData(updatedData); // Sync context
         } catch (error) {
           console.error("Error saving quiz score to Firestore:", error);
@@ -145,14 +145,27 @@ export default function QuizPage() {
             </div>
           </div>
 
-          {/* Question Text */}
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-            <div style={{ background: 'rgba(138,43,226,0.1)', color: 'var(--primary)', padding: '0.8rem', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <HelpCircle size={24} />
+          {/* Question Text & Image */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+              <div style={{ background: 'rgba(138,43,226,0.1)', color: 'var(--primary)', padding: '0.8rem', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <HelpCircle size={24} />
+              </div>
+              <h3 style={{ margin: 0, fontSize: '1.35rem', lineHeight: '1.5', color: 'var(--text-primary)', fontWeight: '600' }}>
+                {activeQuiz.question}
+              </h3>
             </div>
-            <h3 style={{ margin: 0, fontSize: '1.35rem', lineHeight: '1.5', color: 'var(--text-primary)', fontWeight: '600' }}>
-              {activeQuiz.question}
-            </h3>
+            
+            {/* Display Image if provided */}
+            {activeQuiz.image && (
+              <div style={{ width: '100%', display: 'flex', justifyContent: 'center', margin: '0.5rem 0' }}>
+                <img 
+                  src={activeQuiz.image} 
+                  alt="Code Sample" 
+                  style={{ maxWidth: '100%', maxHeight: '300px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }} 
+                />
+              </div>
+            )}
           </div>
 
           {/* Options List */}

@@ -131,7 +131,7 @@ export default function IdePage() {
     }
   };
 
-  const handleFinishTest = () => {
+  const handleFinishTest = async () => {
     let quizScore = 100;
     if (currentUser) {
       const completedModules = userData?.completedModules || [];
@@ -156,19 +156,16 @@ export default function IdePage() {
           role: userData?.role || 'student'
         };
         
-        // Update Firestore in the background so the user is not blocked
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        setDoc(userDocRef, updatedData)
-          .then(() => {
-            setUserData(updatedData);
-          })
-          .catch((error) => {
-            console.error("Error saving student progress:", error);
-          });
+        try {
+          const userDocRef = doc(db, 'users', currentUser.uid);
+          await setDoc(userDocRef, updatedData, { merge: true });
+          setUserData(updatedData);
+        } catch (error) {
+          console.error("Error saving student progress:", error);
+        }
       }
     }
     
-    // Navigate immediately to prevent hangs or UI blocks with the actual quiz score
     navigate('/student/certificate', { state: { score: quizScore } });
   };
 
