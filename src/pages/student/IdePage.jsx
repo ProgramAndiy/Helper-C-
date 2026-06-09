@@ -156,13 +156,12 @@ export default function IdePage() {
           role: userData?.role || 'student'
         };
         
-        try {
-          const userDocRef = doc(db, 'users', currentUser.uid);
-          await setDoc(userDocRef, updatedData, { merge: true });
-          setUserData(updatedData);
-        } catch (error) {
+        // Fire and forget to avoid hanging
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        setDoc(userDocRef, updatedData, { merge: true }).catch(error => {
           console.error("Error saving student progress:", error);
-        }
+        });
+        setUserData(updatedData);
       }
     }
     
