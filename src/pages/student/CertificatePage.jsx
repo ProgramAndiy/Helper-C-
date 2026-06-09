@@ -6,6 +6,7 @@ export default function CertificatePage() {
   const navigate = useNavigate();
   const location = useLocation();
   const score = location.state?.score || 100;
+  const moduleTitle = location.state?.moduleTitle || 'Основи програмування C#';
   const { userData } = useAuth();
   
   const studentName = userData 
@@ -21,12 +22,9 @@ export default function CertificatePage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', minHeight: '100vh', background: 'var(--bg-primary)' }}>
       
-      <div style={{ width: '100%', maxWidth: '900px', display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }} className="no-print">
+      <div style={{ width: '100%', maxWidth: '900px', display: 'flex', justifyContent: 'flex-start', marginBottom: '2rem' }} className="no-print">
         <button className="btn" style={{ background: 'transparent', color: 'var(--text-muted)', padding: 0 }} onClick={() => navigate('/student')}>
           <ArrowLeft size={20} /> Повернутися до Roadmap
-        </button>
-        <button className="btn btn-primary" onClick={handlePrint}>
-          <Printer size={18} /> Роздрукувати сертифікат
         </button>
       </div>
 
@@ -67,9 +65,9 @@ export default function CertificatePage() {
           <h2 style={{ fontSize: '2.5rem', borderBottom: '2px solid var(--primary)', display: 'inline-block', paddingBottom: '0.2rem', margin: 0, color: '#111', fontWeight: 'bold' }}>
             {studentName}
           </h2>
-          <p style={{ fontSize: '1.1rem', color: '#555', margin: 0 }}>успішно завершив(ла) навчальний курс</p>
+          <p style={{ fontSize: '1.1rem', color: '#555', margin: 0 }}>успішно завершив(ла) модуль</p>
           <h3 style={{ fontSize: '1.6rem', color: 'var(--primary)', margin: 0, fontWeight: '600' }}>
-            Основи та просунуті концепції C#
+            {moduleTitle}
           </h3>
         </div>
         

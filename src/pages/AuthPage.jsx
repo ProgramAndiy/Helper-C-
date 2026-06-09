@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Code } from 'lucide-react';
 import { auth, db, googleProvider, githubProvider } from '../firebase/config';
-import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
 
@@ -38,6 +38,7 @@ export default function AuthPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
 
   // States for student registration
   const [lastName, setLastName] = useState('');
@@ -53,6 +54,8 @@ export default function AuthPage() {
     e.preventDefault();
     setErrorMsg('');
     try {
+      await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
+      
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
         // Role is loaded inside AuthContext.jsx onAuthStateChanged automatically.
@@ -92,6 +95,7 @@ export default function AuthPage() {
 
   const handleGoogleLogin = async () => {
     try {
+      await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
       const userCredential = await signInWithPopup(auth, googleProvider);
       const user = userCredential.user;
 
@@ -126,6 +130,7 @@ export default function AuthPage() {
 
   const handleGithubLogin = async () => {
     try {
+      await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
       const userCredential = await signInWithPopup(auth, githubProvider);
       const user = userCredential.user;
 
@@ -272,6 +277,19 @@ export default function AuthPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+            <input 
+              type="checkbox" 
+              id="remember" 
+              checked={rememberMe} 
+              onChange={(e) => setRememberMe(e.target.checked)} 
+              style={{ width: '16px', height: '16px', accentColor: 'var(--primary)', cursor: 'pointer' }}
+            />
+            <label htmlFor="remember" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', cursor: 'pointer', userSelect: 'none' }}>
+              Запам'ятати мене (не виходити з акаунту)
+            </label>
           </div>
 
           <button type="submit" className="btn btn-primary" style={{ marginTop: '1rem', padding: '0.8rem' }}>

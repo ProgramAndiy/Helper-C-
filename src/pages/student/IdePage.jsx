@@ -165,7 +165,7 @@ export default function IdePage() {
       }
     }
     
-    navigate('/student/certificate', { state: { score: quizScore } });
+    navigate('/student/certificate', { state: { score: quizScore, moduleTitle: moduleData?.title || 'Основи C#' } });
   };
 
   const handleTaskSwitch = (index) => {
