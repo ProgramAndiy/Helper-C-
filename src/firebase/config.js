@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, GithubAuthProvider } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBJ771yrr30PU-rbDyeebccHAS6rlsBet0",
@@ -18,6 +18,11 @@ const app = initializeApp(firebaseConfig);
 // Initialize Firebase services
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// Enable offline persistence to prevent hanging when offline or blocked
+enableIndexedDbPersistence(db).catch((err) => {
+  console.warn("Offline persistence not enabled:", err);
+});
 
 // Auth Providers
 export const googleProvider = new GoogleAuthProvider();

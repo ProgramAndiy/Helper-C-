@@ -63,13 +63,17 @@ export default function ProfilePage() {
         role: userData?.role || 'student' // preserve role
       };
 
-      await setDoc(userDocRef, updatedData, { merge: true });
-      setUserData(updatedData); // Update context state
+      // Fire and forget to prevent UI freeze
+      setDoc(userDocRef, updatedData, { merge: true }).catch(error => {
+        console.error("Error updating profile:", error);
+        setErrorMsg("Не вдалося зберегти зміни. Перевірте з'єднання з базою даних.");
+      });
+      
+      setUserData(updatedData); // Update context state immediately
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 3000);
     } catch (error) {
-      console.error("Error updating profile:", error);
-      setErrorMsg("Не вдалося зберегти зміни. Перевірте з'єднання з базою даних.");
+      console.error("Error setting profile data:", error);
     }
   };
 
@@ -97,7 +101,7 @@ export default function ProfilePage() {
               </div>
               <div>
                 <label className="input-label">По батькові</label>
-                <input type="text" className="input-field" value={profile.middleName} onChange={e => setProfile({...profile, middleName: e.target.value})} required />
+                <input type="text" className="input-field" value={profile.middleName} onChange={e => setProfile({...profile, middleName: e.target.value})} />
               </div>
             </div>
           </div>
@@ -109,19 +113,19 @@ export default function ProfilePage() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
             <div>
               <label className="input-label"><Mail size={16} style={{ display: 'inline', marginRight: '0.5rem', verticalAlign: 'text-bottom' }} /> Email</label>
-              <input type="email" className="input-field" value={profile.email} onChange={e => setProfile({...profile, email: e.target.value})} required disabled />
+              <input type="email" className="input-field" value={profile.email} onChange={e => setProfile({...profile, email: e.target.value})} disabled />
             </div>
             <div>
               <label className="input-label"><School size={16} style={{ display: 'inline', marginRight: '0.5rem', verticalAlign: 'text-bottom' }} /> Навчальний заклад</label>
-              <input type="text" className="input-field" value={profile.university} onChange={e => setProfile({...profile, university: e.target.value})} required />
+              <input type="text" className="input-field" value={profile.university} onChange={e => setProfile({...profile, university: e.target.value})} />
             </div>
             <div>
               <label className="input-label"><Users size={16} style={{ display: 'inline', marginRight: '0.5rem', verticalAlign: 'text-bottom' }} /> Рік вступу</label>
-              <input type="number" className="input-field" value={profile.year} onChange={e => setProfile({...profile, year: e.target.value})} min="2000" max="2100" required />
+              <input type="number" className="input-field" value={profile.year} onChange={e => setProfile({...profile, year: e.target.value})} min="2000" max="2100" />
             </div>
             <div>
               <label className="input-label"><Users size={16} style={{ display: 'inline', marginRight: '0.5rem', verticalAlign: 'text-bottom' }} /> Група</label>
-              <input type="text" className="input-field" value={profile.group} onChange={e => setProfile({...profile, group: e.target.value})} required />
+              <input type="text" className="input-field" value={profile.group} onChange={e => setProfile({...profile, group: e.target.value})} />
             </div>
           </div>
 

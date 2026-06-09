@@ -100,10 +100,16 @@ export default function AuthPage() {
       let finalRole = role;
 
       if (!userDocSnap.exists()) {
+        const parts = user.displayName ? user.displayName.split(' ') : [];
+        const fName = parts[0] || '';
+        const lName = parts.slice(1).join(' ') || '';
+
         await setDoc(userDocRef, {
           uid: user.uid,
           email: user.email,
           role: role,
+          firstName: fName,
+          lastName: lName,
           createdAt: new Date().toISOString()
         });
       } else {
@@ -120,7 +126,7 @@ export default function AuthPage() {
 
   const handleGithubLogin = async () => {
     try {
-      const userCredential = await signInWithPopup(auth, googleProvider);
+      const userCredential = await signInWithPopup(auth, githubProvider);
       const user = userCredential.user;
 
       const userDocRef = doc(db, 'users', user.uid);
@@ -128,10 +134,16 @@ export default function AuthPage() {
       let finalRole = role;
 
       if (!userDocSnap.exists()) {
+        const parts = user.displayName ? user.displayName.split(' ') : [];
+        const fName = parts[0] || '';
+        const lName = parts.slice(1).join(' ') || '';
+
         await setDoc(userDocRef, {
           uid: user.uid,
           email: user.email,
           role: role,
+          firstName: fName,
+          lastName: lName,
           createdAt: new Date().toISOString()
         });
       } else {
