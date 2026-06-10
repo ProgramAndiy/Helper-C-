@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check, X, Award, HelpCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../firebase/config';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { courseModules } from '../../data/courseData';
 
 export default function QuizPage() {
@@ -13,10 +13,36 @@ export default function QuizPage() {
   
   const moduleInfo = location.state?.module || { title: 'Модуль', desc: 'Тест', id: 1 };
   
-  // Find full module from data (fallback if Firestore hasn't fully loaded the module list)
   const [moduleData, setModuleData] = useState(() => {
-    return courseModules.find(m => m.id === moduleInfo.id) || courseModules[0];
+    if (location.state?.module?.quizzes) {
+      return location.state.module;
+    }
+    const initialId = moduleInfo.id || 1;
+    return courseModules.find(m => m.id === initialId) || courseModules[0];
   });
+
+  useEffect(() => {
+    if (location.state?.module?.quizzes) return;
+
+    const fetchModuleFromDb = async () => {
+      try {
+        const moduleId = moduleInfo.id || 1;
+        const fetchPromise = getDoc(doc(db, 'modules', `module_${moduleId}`));
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Timeout")), 3000)
+        );
+        const docSnap = await Promise.race([fetchPromise, timeoutPromise]);
+        
+        if (docSnap.exists()) {
+          setModuleData({ docId: docSnap.id, ...docSnap.data() });
+        }
+      } catch (err) {
+        console.error("Error fetching single module for quiz:", err);
+      }
+    };
+
+    fetchModuleFromDb();
+  }, [location.state, moduleInfo.id]);
 
   const quizzes = moduleData.quizzes || [];
   

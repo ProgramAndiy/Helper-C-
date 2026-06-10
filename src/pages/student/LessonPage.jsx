@@ -3,21 +3,63 @@ import { ArrowLeft, UserCircle, Code, BookOpen, ArrowRight } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom';
 import { courseModules } from '../../data/courseData';
 import { db } from '../../firebase/config';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, doc, getDoc } from 'firebase/firestore';
 
 export default function LessonPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const moduleInfo = location.state?.module || { title: 'Модуль', desc: 'Теорія', id: 1 };
 
-  // Load the full module details from courseData
-  const moduleData = courseModules.find(m => m.id === moduleInfo.id) || courseModules[0];
-  const topics = moduleData.topics || [];
-  const [activeTopicId, setActiveTopicId] = useState(topics[0]?.id || '');
+  const [moduleData, setModuleData] = useState(() => {
+    if (location.state?.module?.topics) {
+      return location.state.module;
+    }
+    const initialId = moduleInfo.id || 1;
+    return courseModules.find(m => m.id === initialId) || courseModules[0];
+  });
 
+  const topics = moduleData.topics || [];
+  const [activeTopicId, setActiveTopicId] = useState('');
   const activeTopic = topics.find(t => t.id === activeTopicId) || topics[0];
 
   const [teacherName, setTeacherName] = useState('Дмитро Петров');
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (topics.length > 0) {
+      const exists = topics.some(t => t.id === activeTopicId);
+      if (!exists) {
+        setActiveTopicId(topics[0].id);
+      }
+    }
+  }, [topics, activeTopicId]);
+
+  useEffect(() => {
+    // If we already have the database module with topics, don't refetch
+    if (location.state?.module?.topics) return;
+
+    const fetchModuleFromDb = async () => {
+      setIsLoading(true);
+      try {
+        const moduleId = moduleInfo.id || 1;
+        const fetchPromise = getDoc(doc(db, 'modules', `module_${moduleId}`));
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Timeout")), 3000)
+        );
+        const docSnap = await Promise.race([fetchPromise, timeoutPromise]);
+        
+        if (docSnap.exists()) {
+          setModuleData({ docId: docSnap.id, ...docSnap.data() });
+        }
+      } catch (err) {
+        console.error("Error fetching single module:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchModuleFromDb();
+  }, [location.state, moduleInfo.id]);
 
   useEffect(() => {
     const fetchTeacher = async () => {

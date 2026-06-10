@@ -1,44 +1,116 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Play, Check, AlertTriangle, ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { courseModules } from '../../data/courseData';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../firebase/config';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, getDocs, collection } from 'firebase/firestore';
 
 export default function IdePage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const moduleInfo = location.state?.module || { title: 'Практика', desc: 'Завдання', id: 1 };
-
-  // Load the full module details from courseData
-  const moduleData = courseModules.find(m => m.id === moduleInfo.id) || courseModules[0];
-  const tasks = moduleData.tasks || [];
-
   const { currentUser, userData, setUserData } = useAuth();
+
+  const [moduleData, setModuleData] = useState(() => {
+    if (location.state?.module?.tasks) {
+      return location.state.module;
+    }
+    const initialId = location.state?.module?.id || 1;
+    return courseModules.find(m => m.id === initialId) || courseModules[0];
+  });
+
+  const tasks = moduleData.tasks || [];
   const [activeTaskIndex, setActiveTaskIndex] = useState(0);
   const activeTask = tasks[activeTaskIndex] || { title: 'Завдання відсутнє', description: '', instructions: [], initialCode: '', id: 0 };
 
-  // Initialize code state for all tasks
-  const [codes, setCodes] = useState(() => {
-    const initial = {};
-    tasks.forEach(t => {
-      initial[t.id] = t.initialCode;
-    });
-    return initial;
-  });
-
-  // Initialize output state for all tasks
-  const [outputs, setOutputs] = useState(() => {
-    const initial = {};
-    tasks.forEach(t => {
-      initial[t.id] = "Натисніть 'Запустити', щоб скомпілювати код...";
-    });
-    return initial;
-  });
+  const [codes, setCodes] = useState({});
+  const [outputs, setOutputs] = useState({});
 
   const [isRunning, setIsRunning] = useState(false);
   const [showReference, setShowReference] = useState(false);
+
+  useEffect(() => {
+    setActiveTaskIndex(0);
+  }, [moduleData.id]);
+
+  useEffect(() => {
+    setCodes(prev => {
+      const updated = { ...prev };
+      tasks.forEach(t => {
+        if (updated[t.id] === undefined) {
+          updated[t.id] = t.initialCode || '';
+        }
+      });
+      return updated;
+    });
+    
+    setOutputs(prev => {
+      const updated = { ...prev };
+      tasks.forEach(t => {
+        if (updated[t.id] === undefined) {
+          updated[t.id] = "Натисніть 'Запустити', щоб скомпілювати код...";
+        }
+      });
+      return updated;
+    });
+  }, [tasks]);
+
+  useEffect(() => {
+    const fetchActiveModule = async () => {
+      // 1. If location.state?.module has tasks, we already have everything.
+      if (location.state?.module?.tasks) return;
+
+      try {
+        let moduleId = location.state?.module?.id;
+        
+        // 2. If no module ID in state (direct click from sidebar), find active module from progress
+        if (!moduleId) {
+          const completedModules = userData?.completedModules || [];
+          
+          // Fetch modules to see their order
+          const fetchPromise = getDocs(collection(db, 'modules'));
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("Timeout")), 3000)
+          );
+          
+          let list = [];
+          try {
+            const querySnapshot = await Promise.race([fetchPromise, timeoutPromise]);
+            querySnapshot.forEach(docSnap => {
+              list.push({ id: docSnap.data().id, ...docSnap.data() });
+            });
+            list.sort((a, b) => (a.order || 0) - (b.order || 0));
+          } catch (err) {
+            console.error("Error fetching modules list:", err);
+            list = courseModules;
+          }
+          
+          // Find first uncompleted module
+          const activeMod = list.find(m => !completedModules.includes(m.id)) || list[list.length - 1] || courseModules[0];
+          moduleId = activeMod.id;
+        }
+
+        // 3. Fetch full module details from Firestore
+        const fetchPromise = getDoc(doc(db, 'modules', `module_${moduleId}`));
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Timeout")), 3000)
+        );
+        const docSnap = await Promise.race([fetchPromise, timeoutPromise]);
+        
+        if (docSnap.exists()) {
+          setModuleData({ docId: docSnap.id, ...docSnap.data() });
+        } else {
+          // Fallback to static data
+          const staticMod = courseModules.find(m => m.id === moduleId) || courseModules[0];
+          setModuleData(staticMod);
+        }
+      } catch (err) {
+        console.error("Error loading IDE module:", err);
+      }
+    };
+
+    fetchActiveModule();
+  }, [location.state, userData]);
 
   const handleCodeChange = (value) => {
     setCodes(prev => ({

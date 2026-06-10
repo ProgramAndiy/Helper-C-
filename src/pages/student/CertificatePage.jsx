@@ -1,13 +1,27 @@
 import { Award, Printer, ArrowLeft } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { courseModules } from '../../data/courseData';
 
 export default function CertificatePage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const score = location.state?.score || 100;
-  const moduleTitle = location.state?.moduleTitle || 'Основи програмування C#';
   const { userData } = useAuth();
+  
+  const completedModules = userData?.completedModules || [];
+  const latestModuleId = completedModules.length > 0 ? completedModules[completedModules.length - 1] : null;
+
+  const score = location.state?.score !== undefined 
+    ? location.state.score 
+    : (latestModuleId && userData?.quizAttempts?.[`module_${latestModuleId}`]?.score !== undefined
+        ? userData.quizAttempts[`module_${latestModuleId}`].score
+        : 100);
+
+  const fallbackTitle = latestModuleId 
+    ? (courseModules.find(m => m.id === latestModuleId)?.title || `Модуль ${latestModuleId}`)
+    : 'Основи програмування C#';
+
+  const moduleTitle = location.state?.moduleTitle || fallbackTitle;
   
   const studentName = userData 
     ? (userData.lastName || userData.firstName
