@@ -90,38 +90,43 @@ export default function QuizPage() {
 
       // Save to database
       if (currentUser) {
-        setIsSubmittingDb(true);
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        const currentAttempts = userData?.quizAttempts || {};
-        
-        const updatedAttempts = {
-          ...currentAttempts,
-          [`module_${moduleData.id}`]: {
-            score: scorePercent,
-            answers: updatedAnswers,
-            takenAt: new Date().toISOString()
-          }
-        };
+        try {
+          const userDocRef = doc(db, 'users', currentUser.uid);
+          const currentAttempts = userData?.quizAttempts || {};
+          
+          const updatedAttempts = {
+            ...currentAttempts,
+            [`module_${moduleData.id}`]: {
+              score: scorePercent,
+              answers: updatedAnswers,
+              takenAt: new Date().toISOString()
+            }
+          };
 
-        const updatedData = {
-          ...userData,
-          uid: currentUser.uid,
-          email: currentUser.email || '',
-          quizAttempts: updatedAttempts,
-          role: userData?.role || 'student'
-        };
+          const updatedData = {
+            ...userData,
+            uid: currentUser.uid,
+            email: currentUser.email || '',
+            quizAttempts: updatedAttempts,
+            role: userData?.role || 'student'
+          };
 
-        // Fire and forget (or with a short timeout) to prevent UI hanging on bad network
-        setDoc(userDocRef, updatedData, { merge: true }).catch(err => {
-          console.error("Error saving quiz score to Firestore:", err);
-        });
-        
-        setUserData(updatedData); // Sync context immediately
-        
-        // Short delay for better UX before enabling the button
-        setTimeout(() => {
-          setIsSubmittingDb(false);
-        }, 500);
+          // Fire and forget (or with a short timeout) to prevent UI hanging on bad network
+          setDoc(userDocRef, updatedData, { merge: true }).catch(err => {
+            console.error("Error saving quiz score to Firestore:", err);
+          });
+          
+          setUserData(updatedData); // Sync context immediately
+        } catch (err) {
+          console.error("Error preparing quiz save:", err);
+        } finally {
+          // Short delay for better UX before enabling the button
+          setTimeout(() => {
+            setIsSubmittingDb(false);
+          }, 500);
+        }
+      } else {
+        setIsSubmittingDb(false);
       }
     }
   };

@@ -1,12 +1,120 @@
 import { useState, useEffect } from 'react';
-import { Search, BarChart2, MoreVertical, Plus, Download, ChevronLeft, ChevronRight, X, Check, HelpCircle } from 'lucide-react';
+import { Search, BarChart2, MoreVertical, Plus, Download, ChevronLeft, ChevronRight, X, Check, HelpCircle, Calendar } from 'lucide-react';
 import { db } from '../../firebase/config';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, onSnapshot, setDoc, doc, addDoc } from 'firebase/firestore';
+import { courseModules } from '../../data/courseData';
+
+// Seeding function to create sample students if database is empty
+const seedStudents = async () => {
+  const sampleStudents = [
+    {
+      uid: "ST-001",
+      email: "shevchenko@university.edu",
+      firstName: "Тарас",
+      lastName: "Шевченко",
+      middleName: "Григорович",
+      group: "ІП-31",
+      progress: 60,
+      role: "student",
+      status: "active",
+      lastActive: new Date(Date.now() - 3600000 * 2).toLocaleString('uk-UA'),
+      completedModules: [1, 2, 3],
+      quizAttempts: {
+        "module_1": {
+          score: 95,
+          takenAt: new Date(Date.now() - 86400000 * 3).toISOString(),
+          answers: [
+            { questionText: "Який тип даних використовується для збереження логічних значень true або false?", selectedOption: "bool", correctOption: "bool", isCorrect: true },
+            { questionText: "Який цикл виконується хоча б один раз, навіть якщо початкова умова є хибною?", selectedOption: "do while", correctOption: "do while", isCorrect: true }
+          ]
+        },
+        "module_2": {
+          score: 85,
+          takenAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+          answers: [
+            { questionText: "Який принцип ООП полягає у приховуванні деталей реалізації та обмеженні прямого доступу до даних?", selectedOption: "Інкапсуляція", correctOption: "Інкапсуляція", isCorrect: true },
+            { questionText: "Який оператор використовується у C# для успадкування класу?", selectedOption: ":", correctOption: ":", isCorrect: true }
+          ]
+        },
+        "module_3": {
+          score: 90,
+          takenAt: new Date(Date.now() - 86400000 * 1).toISOString(),
+          answers: [
+            { questionText: "Де зазвичай зберігаються змінні значимих типів (Value Types) у C#?", selectedOption: "У стеку (Stack)", correctOption: "У стеку (Stack)", isCorrect: true }
+          ]
+        }
+      }
+    },
+    {
+      uid: "ST-002",
+      email: "ukrainka@university.edu",
+      firstName: "Леся",
+      lastName: "Українка",
+      middleName: "Петрівна",
+      group: "ІП-31",
+      progress: 40,
+      role: "student",
+      status: "active",
+      lastActive: new Date(Date.now() - 3600000 * 5).toLocaleString('uk-UA'),
+      completedModules: [1, 2],
+      quizAttempts: {
+        "module_1": {
+          score: 90,
+          takenAt: new Date(Date.now() - 86400000 * 4).toISOString(),
+          answers: [
+            { questionText: "Який тип даних використовується для збереження логічних значень true або false?", selectedOption: "bool", correctOption: "bool", isCorrect: true }
+          ]
+        },
+        "module_2": {
+          score: 50,
+          takenAt: new Date(Date.now() - 86400000 * 3).toISOString(),
+          answers: [
+            { questionText: "Який принцип ООП полягає у приховуванні деталей реалізації та обмеженні прямого доступу до даних?", selectedOption: "Поліморфізм", correctOption: "Інкапсуляція", isCorrect: false }
+          ]
+        }
+      }
+    },
+    {
+      uid: "ST-003",
+      email: "franko@university.edu",
+      firstName: "Іван",
+      lastName: "Франко",
+      middleName: "Якович",
+      group: "ІП-32",
+      progress: 20,
+      role: "student",
+      status: "active",
+      lastActive: new Date(Date.now() - 3600000 * 24).toLocaleString('uk-UA'),
+      completedModules: [1],
+      quizAttempts: {
+        "module_1": {
+          score: 45,
+          takenAt: new Date().toISOString(),
+          answers: [
+            { questionText: "Який тип даних використовується для збереження логічних значень true або false?", selectedOption: "int", correctOption: "bool", isCorrect: false }
+          ]
+        }
+      }
+    }
+  ];
+
+  for (const student of sampleStudents) {
+    try {
+      await setDoc(doc(db, 'users', student.uid), student);
+    } catch (e) {
+      console.warn("Failed to seed student:", student.uid, e);
+    }
+  }
+};
 
 export default function StudentsManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('');
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+
+  const [inviteGroup, setInviteGroup] = useState('');
+  const [generatedLink, setGeneratedLink] = useState('');
+  const [copied, setCopied] = useState(false);
 
   const [students, setStudents] = useState([]);
   const [modules, setModules] = useState([]);
@@ -16,17 +124,13 @@ export default function StudentsManagement() {
   const [selectedModuleId, setSelectedModuleId] = useState(null);
 
   useEffect(() => {
-    const fetchStudentsAndModules = async () => {
-      try {
-        // Fetch Students
-        const q = query(collection(db, 'users'), where('role', '==', 'student'));
-        const querySnapshot = await getDocs(q);
-        const list = [];
-        
-        querySnapshot.forEach(docSnap => {
-          const data = docSnap.data();
+    // 1. Subscribe to users list in real time
+    const unsubscribeUsers = onSnapshot(collection(db, 'users'), async (snapshot) => {
+      const list = [];
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        if (data.role === 'student') {
           const fullName = `${data.lastName || ''} ${data.firstName || ''} ${data.middleName || ''}`.trim();
-          
           list.push({
             id: docSnap.id,
             name: fullName || data.email || 'Студент',
@@ -36,26 +140,40 @@ export default function StudentsManagement() {
             lastActive: data.lastActive || 'Нещодавно',
             quizAttempts: data.quizAttempts || {}
           });
-        });
-        
+        }
+      });
+
+      // Seed if empty and finished fetching
+      if (list.length === 0 && !snapshot.metadata.fromCache) {
+        console.log("Users empty, seeding sample students...");
+        await seedStudents();
+      } else {
         setStudents(list);
-
-        // Fetch Modules
-        const modulesSnapshot = await getDocs(collection(db, 'modules'));
-        const mods = [];
-        modulesSnapshot.forEach(docSnap => {
-          mods.push({ id: docSnap.id, ...docSnap.data() });
-        });
-        setModules(mods);
-
-      } catch (error) {
-        console.error("Error fetching students/modules data:", error);
-      } finally {
         setLoading(false);
       }
-    };
+    }, (error) => {
+      console.error("Error listening to student users:", error);
+      setLoading(false);
+    });
 
-    fetchStudentsAndModules();
+    // 2. Fetch Modules for dynamic names mapping
+    const unsubscribeModules = onSnapshot(collection(db, 'modules'), (snapshot) => {
+      const mods = [];
+      snapshot.forEach(docSnap => {
+        mods.push({ id: docSnap.data().id, ...docSnap.data() });
+      });
+      if (mods.length === 0) {
+        mods.push(...courseModules.map((mod, idx) => ({ ...mod, id: mod.id, order: idx + 1 })));
+      }
+      setModules(mods);
+    }, (error) => {
+      console.error("Error listening to modules:", error);
+    });
+
+    return () => {
+      unsubscribeUsers();
+      unsubscribeModules();
+    };
   }, []);
 
   const handleViewStats = (student) => {
@@ -76,11 +194,68 @@ export default function StudentsManagement() {
     return mod?.title || modKey;
   };
 
+  // CSV Export implementation
+  const handleExportCSV = () => {
+    if (filteredStudents.length === 0) {
+      alert("Немає даних для експорту.");
+      return;
+    }
+
+    // CSV header with UTF-8 BOM to prevent Excel display issues
+    let csvContent = "\uFEFF"; 
+    csvContent += "Студент,Група,Прогрес курсу (%),Остання активність,Статус\n";
+
+    filteredStudents.forEach(student => {
+      const statusText = student.status === 'active' 
+        ? 'Активний' 
+        : (student.status === 'completed' ? 'Завершив' : 'Неактивний');
+      
+      csvContent += `"${student.name}","${student.group}",${student.progress},"${student.lastActive}","${statusText}"\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `students_export_${new Date().toLocaleDateString('uk-UA')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  const handleGenerateInviteLink = () => {
+    if (!inviteGroup.trim()) {
+      alert("Будь ласка, вкажіть назву групи.");
+      return;
+    }
+    const link = `${window.location.origin}/login?group=${encodeURIComponent(inviteGroup.trim())}`;
+    setGeneratedLink(link);
+    setCopied(false);
+  };
+
+  const handleCopyLink = () => {
+    if (generatedLink) {
+      navigator.clipboard.writeText(generatedLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleCloseInviteModal = () => {
+    setIsInviteModalOpen(false);
+    setInviteGroup('');
+    setGeneratedLink('');
+    setCopied(false);
+  };
+
   const filteredStudents = students.filter(s => {
     const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesGroup = selectedGroup === '' || s.group.toLowerCase().includes(selectedGroup.toLowerCase());
     return matchesSearch && matchesGroup;
   });
+
+  // Safe definitions for the Stats Modal
+  const attempts = selectedStudent?.quizAttempts || {};
+  const attemptedModuleIds = Object.keys(attempts);
 
   return (
     <div>
@@ -107,7 +282,7 @@ export default function StudentsManagement() {
             value={selectedGroup}
             onChange={(e) => setSelectedGroup(e.target.value)}
           />
-          <button className="btn btn-secondary" style={{ padding: '0.6rem 1rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }} onClick={() => alert('Вивантаження статистики у CSV...')}>
+          <button className="btn btn-secondary" style={{ padding: '0.6rem 1rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }} onClick={handleExportCSV}>
             <Download size={18} />
             <span>Експорт</span>
           </button>
@@ -328,34 +503,73 @@ export default function StudentsManagement() {
       {/* Invite Modal Overlay */}
       {isInviteModalOpen && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="glass-panel animate-fade-in" style={{ padding: '2rem', width: '400px', maxWidth: '90%' }}>
+          <div className="glass-panel animate-fade-in" style={{ padding: '2rem', width: '450px', maxWidth: '90%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h3 style={{ margin: 0 }}>Запросити студента</h3>
-              <button className="btn" style={{ padding: 0, background: 'transparent', color: 'var(--text-muted)' }} onClick={() => setIsInviteModalOpen(false)}>
+              <h3 style={{ margin: 0, fontSize: '1.25rem' }}>Запросити студентів за посиланням</h3>
+              <button className="btn" style={{ padding: 0, background: 'transparent', color: 'var(--text-muted)' }} onClick={handleCloseInviteModal}>
                 <X size={20} />
               </button>
             </div>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <label className="input-label">Email студента</label>
-                <input type="email" className="input-field" placeholder="student@university.edu" />
-              </div>
-              <div>
-                <label className="input-label">Група</label>
-                <input type="text" className="input-field" placeholder="Наприклад, ІП-31" />
-              </div>
-              
-              <button 
-                className="btn btn-primary" 
-                style={{ marginTop: '1rem', width: '100%' }}
-                onClick={() => {
-                  alert('Запрошення успішно надіслано!');
-                  setIsInviteModalOpen(false);
-                }}
-              >
-                Надіслати запрошення
-              </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+              {!generatedLink ? (
+                <>
+                  <div>
+                    <label className="input-label">Введіть назву групи для запрошення</label>
+                    <input 
+                      type="text" 
+                      className="input-field" 
+                      placeholder="Наприклад, ПК-42 чи ІП-31" 
+                      value={inviteGroup}
+                      onChange={e => setInviteGroup(e.target.value)}
+                    />
+                  </div>
+                  
+                  <button 
+                    className="btn btn-primary" 
+                    style={{ marginTop: '0.5rem', width: '100%' }}
+                    onClick={handleGenerateInviteLink}
+                  >
+                    Згенерувати посилання для реєстрації
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <p style={{ margin: '0 0 0.5rem 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                      Посилання для автоматичної реєстрації студентів у групу <strong>{inviteGroup}</strong>:
+                    </p>
+                    <input 
+                      type="text" 
+                      className="input-field" 
+                      readOnly 
+                      value={generatedLink}
+                      style={{ background: 'rgba(0,0,0,0.2)', color: 'var(--success)', fontFamily: 'monospace', fontSize: '0.9rem' }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <button 
+                      className="btn btn-primary" 
+                      style={{ flex: 1, padding: '0.8rem' }}
+                      onClick={handleCopyLink}
+                    >
+                      {copied ? 'Копійовано! ✓' : 'Копіювати посилання'}
+                    </button>
+                    <button 
+                      className="btn btn-secondary" 
+                      style={{ flex: 1, padding: '0.8rem' }}
+                      onClick={() => setGeneratedLink('')}
+                    >
+                      Змінити групу
+                    </button>
+                  </div>
+
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', lineHeight: '1.4' }}>
+                    💡 Студенти, які перейдуть за цим посиланням, будуть автоматично розподілені в групу <strong>{inviteGroup}</strong> при реєстрації.
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </div>

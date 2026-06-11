@@ -110,11 +110,11 @@ export default function TestManagement() {
     }
   };
 
-  const handleDeleteModule = async (modId) => {
+  const handleDeleteModule = (modId) => {
     if (!window.confirm("Ви дійсно хочете видалити цей модуль разом із усією теорією, тестами та завданнями?")) return;
     
     try {
-      await deleteDoc(doc(db, 'modules', `module_${modId}`));
+      // 1. Update React state instantly so the UI feels responsive
       const updatedList = modules.filter(m => m.id !== modId);
       setModules(updatedList);
       if (selectedModule?.id === modId) {
@@ -126,24 +126,35 @@ export default function TestManagement() {
           setOriginalModule(null);
         }
       }
+
+      // 2. Perform background delete
+      const docRef = doc(db, 'modules', `module_${modId}`);
+      deleteDoc(docRef).catch(err => {
+        console.error("Error deleting module from Firestore in background:", err);
+      });
     } catch (err) {
-      console.error("Error deleting module:", err);
+      console.error("Error deleting module locally:", err);
       alert("Не вдалося видалити модуль.");
     }
   };
 
-  const handleSaveModule = async () => {
+  const handleSaveModule = () => {
     if (!selectedModule) return;
     setIsSaving(true);
     try {
-      const docRef = doc(db, 'modules', `module_${selectedModule.id}`);
-      await setDoc(docRef, selectedModule);
+      // Update local state instantly so the UI feels responsive
       setModules(prev => prev.map(m => m.id === selectedModule.id ? selectedModule : m).sort((a, b) => a.order - b.order));
       setOriginalModule(JSON.parse(JSON.stringify(selectedModule)));
-      alert("Модуль успішно збережено у Firestore!");
+      
+      const docRef = doc(db, 'modules', `module_${selectedModule.id}`);
+      
+      // Fire-and-forget background synchronization with Firestore
+      setDoc(docRef, selectedModule).catch(err => {
+        console.error("Error syncing module to Firestore in background:", err);
+      });
     } catch (err) {
-      console.error("Error saving module:", err);
-      alert("Не вдалося зберегти зміни у Firestore.");
+      console.error("Error saving module locally:", err);
+      alert("Не вдалося зберегти зміни.");
     } finally {
       setIsSaving(false);
     }
