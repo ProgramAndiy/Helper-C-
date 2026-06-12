@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# ngrok binaries and shortcuts
+ngrok.exe
+ngrok.lnk
