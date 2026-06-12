@@ -143,7 +143,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Main Sections */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }}>
+      <div className="admin-grid">
         
         {/* Progress monitoring (Chart) */}
         <div className="glass-panel" style={{ padding: '2rem' }}>

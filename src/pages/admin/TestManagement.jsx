@@ -716,7 +716,7 @@ export default function TestManagement() {
                       />
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="code-editor-grid">
                       <div>
                         <label className="input-label">Початковий шаблон коду (для редактора)</label>
                         <textarea 

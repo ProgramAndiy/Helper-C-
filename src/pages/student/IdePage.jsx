@@ -223,10 +223,10 @@ export default function IdePage() {
   };
 
   return (
-    <div style={{ display: 'flex', gap: '1.5rem', height: 'calc(100vh - 120px)', minHeight: '550px' }}>
+    <div className="ide-container">
       
       {/* Left panel: Task Description and Navigation */}
-      <div className="glass-panel" style={{ width: '380px', padding: '1.5rem', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+      <div className="glass-panel ide-left-panel">
         <button className="btn" style={{ background: 'transparent', color: 'var(--text-muted)', marginBottom: '1rem', padding: 0, alignSelf: 'flex-start' }} onClick={() => navigate('/student')}>
           <ArrowLeft size={18} /> Назад до Roadmap
         </button>
@@ -333,7 +333,7 @@ export default function IdePage() {
       </div>
 
       {/* Right panel: Editor and Console */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <div className="ide-right-panel">
         
         {/* Editor Wrapper */}
         <div className="glass-panel" style={{ flex: 2, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
