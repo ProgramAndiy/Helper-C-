@@ -1,15 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Save, User, Shield, Bell } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { db } from '../../firebase/config';
-import { doc, setDoc } from 'firebase/firestore';
 
 export default function AdminSettings() {
   const [activeTab, setActiveTab] = useState('profile');
   const [isSaved, setIsSaved] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const { currentUser, userData, setUserData } = useAuth();
+  const { currentUser, userData, setUserData, updateProfile } = useAuth();
   
   const [profile, setProfile] = useState({
     firstName: '',
@@ -23,7 +21,7 @@ export default function AdminSettings() {
       setProfile({
         firstName: userData.firstName || '',
         lastName: userData.lastName || '',
-        position: userData.position || '',
+        position: userData.middleName || '', // Map position to middleName
         email: userData.email || currentUser?.email || ''
       });
     } else if (currentUser) {
@@ -42,24 +40,16 @@ export default function AdminSettings() {
     if (!currentUser) return;
 
     try {
-      const userDocRef = doc(db, 'users', currentUser.uid);
-      const updatedData = {
-        ...userData,
-        uid: currentUser.uid,
-        email: profile.email,
-        lastName: profile.lastName,
+      await updateProfile({
         firstName: profile.firstName,
-        position: profile.position,
-        role: userData?.role || 'admin' // preserve role
-      };
-
-      await setDoc(userDocRef, updatedData);
-      setUserData(updatedData); // Update context state
+        lastName: profile.lastName,
+        middleName: profile.position
+      });
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 3000);
     } catch (error) {
       console.error("Error updating admin profile:", error);
-      setErrorMsg("Не вдалося зберегти зміни. Перевірте з'єднання з базою даних.");
+      setErrorMsg(error.message || "Не вдалося зберегти зміни. Перевірте з'єднання з сервером.");
     }
   };
 

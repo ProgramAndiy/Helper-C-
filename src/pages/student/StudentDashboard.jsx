@@ -2,8 +2,6 @@ import { CheckCircle, Lock, PlayCircle, Award, Code, BookOpen } from 'lucide-rea
 import { useNavigate } from 'react-router-dom';
 import { courseModules } from '../../data/courseData';
 import { useAuth } from '../../context/AuthContext';
-import { db } from '../../firebase/config';
-import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
 import { useState, useEffect } from 'react';
 
 export default function StudentDashboard() {
@@ -15,44 +13,14 @@ export default function StudentDashboard() {
   useEffect(() => {
     const fetchModules = async () => {
       try {
-        // Use a 3-second timeout to prevent hanging when offline/blocked
-        const fetchPromise = getDocs(collection(db, 'modules'));
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Firestore fetch timed out")), 2000)
-        );
-
-        const querySnapshot = await Promise.race([fetchPromise, timeoutPromise]);
-        let list = [];
-        querySnapshot.forEach(docSnap => {
-          list.push({ docId: docSnap.id, ...docSnap.data() });
-        });
-
-        // Seed with default modules if Firestore modules collection is empty
-        if (list.length === 0) {
-          const defaults = courseModules.map((mod, index) => ({
-            ...mod,
-            id: mod.id,
-            order: index + 1
-          }));
-
-          // Set list immediately to render without freezing
-          list = defaults;
-
-          // Seed in background without awaiting the whole loop
-          defaults.forEach(d => {
-            const dataToSave = { ...d };
-            delete dataToSave.status; // Remove static status
-            const newDocRef = doc(db, 'modules', `module_${d.id}`);
-            setDoc(newDocRef, dataToSave).catch(err => console.warn(`Failed to seed module_${d.id}:`, err));
-          });
+        const res = await fetch('/api/modules');
+        if (!res.ok) {
+          throw new Error("Не вдалося завантажити модулі");
         }
-
-        // Sort by order
-        list.sort((a, b) => (a.order || 0) - (b.order || 0));
+        const list = await res.json();
         setDbModules(list);
       } catch (err) {
-        console.error("Error fetching modules from Firestore:", err);
-        // Fallback to local data immediately on timeout/error
+        console.error("Error fetching modules from API:", err);
         setDbModules(courseModules);
       } finally {
         setLoading(false);

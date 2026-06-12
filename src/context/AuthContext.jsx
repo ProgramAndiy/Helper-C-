@@ -1,7 +1,4 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { auth, db } from '../firebase/config';
-import { onAuthStateChanged } from 'firebase/auth';
-import { doc, onSnapshot } from 'firebase/firestore';
 
 const AuthContext = createContext();
 
@@ -15,48 +12,117 @@ export function AuthProvider({ children }) {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let unsubscribeDoc = null;
+  // Helper to attach authorization header
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+  };
 
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      
-      if (user) {
-        const userDocRef = doc(db, 'users', user.uid);
-        
-        // Listen to document changes directly. This instantly returns cached data if available,
-        // preventing empty profiles and UI hanging on slow networks.
-        unsubscribeDoc = onSnapshot(userDocRef, (docSnap) => {
-          if (docSnap.exists()) {
-            const data = docSnap.data();
+  useEffect(() => {
+    const loadCurrentUser = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const res = await fetch('/api/auth/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setCurrentUser({ email: data.email, uid: data.id });
             setUserData(data);
-            setUserRole(data.role || 'student');
+            setUserRole(data.role);
           } else {
-            setUserRole('student');
-            setUserData(null);
+            // Token invalid or expired
+            localStorage.removeItem('token');
           }
-          setLoading(false);
-        }, (error) => {
-          console.error("Error fetching user from Firestore:", error);
-          setUserRole('student');
-          setLoading(false);
-        });
-      } else {
-        setUserRole(null);
-        setUserData(null);
-        setLoading(false);
-        if (unsubscribeDoc) {
-          unsubscribeDoc();
-          unsubscribeDoc = null;
+        } catch (error) {
+          console.error("Error loading user profile on startup:", error);
         }
       }
+      setLoading(false);
+    };
+
+    loadCurrentUser();
+  }, []);
+
+  const login = async (email, password) => {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    
+    if (!res.ok) {
+      const errData = await res.json();
+      throw new Error(errData.message || 'Невірний email або пароль');
+    }
+    
+    const data = await res.json();
+    localStorage.setItem('token', data.token);
+    setCurrentUser({ email: data.user.email, uid: data.user.id });
+    setUserData(data.user);
+    setUserRole(data.user.role);
+    return data;
+  };
+
+  const register = async (email, password, firstName, lastName, middleName, university, admissionYear, group, role, teacherAccessCode) => {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        email, 
+        password, 
+        firstName, 
+        lastName, 
+        middleName, 
+        university, 
+        admissionYear: admissionYear ? parseInt(admissionYear) : null, 
+        group,
+        role,
+        teacherAccessCode
+      })
+    });
+    
+    if (!res.ok) {
+      const errData = await res.json();
+      throw new Error(errData.message || 'Помилка при реєстрації');
+    }
+    
+    const data = await res.json();
+    localStorage.setItem('token', data.token);
+    setCurrentUser({ email: data.user.email, uid: data.user.id });
+    setUserData(data.user);
+    setUserRole(data.user.role);
+    return data;
+  };
+
+  const logout = () => {
+    localStorage.removeItem('token');
+    setCurrentUser(null);
+    setUserData(null);
+    setUserRole(null);
+  };
+
+  const updateProfile = async (profileData) => {
+    const token = localStorage.getItem('token');
+    const res = await fetch('/api/auth/update-profile', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(profileData)
     });
 
-    return () => {
-      unsubscribeAuth();
-      if (unsubscribeDoc) unsubscribeDoc();
-    };
-  }, []);
+    if (!res.ok) {
+      const errData = await res.json();
+      throw new Error(errData.message || 'Не вдалося оновити профіль');
+    }
+
+    const data = await res.json();
+    setUserData(data);
+    return data;
+  };
 
   const value = {
     currentUser,
@@ -64,7 +130,12 @@ export function AuthProvider({ children }) {
     setUserRole,
     userData,
     setUserData,
-    loading
+    loading,
+    login,
+    register,
+    logout,
+    updateProfile,
+    getAuthHeaders
   };
 
   return (

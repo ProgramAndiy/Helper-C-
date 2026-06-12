@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Check, X, BookOpen, HelpCircle, Code, Save, FileText } from 'lucide-react';
-import { db } from '../../firebase/config';
-import { collection, doc, setDoc, getDocs, deleteDoc } from 'firebase/firestore';
 import { useAuth } from '../../context/AuthContext';
 import { courseModules } from '../../data/courseData';
 
@@ -22,38 +20,22 @@ export default function TestManagement() {
     ? `${userData.lastName || ''} ${userData.firstName || ''}`.trim() || userData.email || 'Викладач'
     : currentUser?.email || 'Викладач';
 
-  // Load modules from Firestore
+  // Load modules from C# API
   useEffect(() => {
     const fetchModules = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, 'modules'));
-        const list = [];
-        querySnapshot.forEach(docSnap => {
-          list.push({ docId: docSnap.id, ...docSnap.data() });
-        });
-
-        // Initialize with defaults if empty
-        if (list.length === 0) {
-          const defaults = courseModules.map((mod, index) => ({
-            ...mod,
-            id: mod.id,
-            order: index + 1
-          }));
-
-          for (const d of defaults) {
-            delete d.status; // Remove static status
-            const newDocRef = doc(db, 'modules', `module_${d.id}`);
-            await setDoc(newDocRef, d);
-            list.push({ docId: newDocRef.id, ...d });
+        const token = localStorage.getItem('token');
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        const res = await fetch('/api/modules', { headers });
+        if (res.ok) {
+          const list = await res.json();
+          list.sort((a, b) => (a.order || 0) - (b.order || 0));
+          setModules(list);
+          
+          if (list.length > 0) {
+            setSelectedModule(list[0]);
+            setOriginalModule(JSON.parse(JSON.stringify(list[0])));
           }
-        }
-
-        list.sort((a, b) => (a.order || 0) - (b.order || 0));
-        setModules(list);
-        
-        if (list.length > 0) {
-          setSelectedModule(list[0]);
-          setOriginalModule(JSON.parse(JSON.stringify(list[0])));
         }
       } catch (error) {
         console.error("Error fetching modules in editor:", error);
@@ -96,25 +78,41 @@ export default function TestManagement() {
     };
     
     try {
-      const docRef = doc(db, 'modules', `module_${newId}`);
-      await setDoc(docRef, newModule);
-      const updatedList = [...modules, newModule].sort((a, b) => a.order - b.order);
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/modules/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(newModule)
+      });
+      if (!res.ok) throw new Error("Server error creating module");
+      const savedModule = await res.json();
+
+      const updatedList = [...modules, savedModule].sort((a, b) => a.order - b.order);
       setModules(updatedList);
-      setSelectedModule(newModule);
-      setOriginalModule(JSON.parse(JSON.stringify(newModule)));
+      setSelectedModule(savedModule);
+      setOriginalModule(JSON.parse(JSON.stringify(savedModule)));
       setActiveTab('general');
       setActiveSubItemIndex(0);
     } catch (err) {
       console.error("Error creating module:", err);
-      alert("Не вдалося створити новий модуль.");
+      alert("Не вдалося створити новий модуль на сервері.");
     }
   };
 
-  const handleDeleteModule = (modId) => {
+  const handleDeleteModule = async (modId) => {
     if (!window.confirm("Ви дійсно хочете видалити цей модуль разом із усією теорією, тестами та завданнями?")) return;
     
     try {
-      // 1. Update React state instantly so the UI feels responsive
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/modules/${modId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error("Server error deleting module");
+
       const updatedList = modules.filter(m => m.id !== modId);
       setModules(updatedList);
       if (selectedModule?.id === modId) {
@@ -126,35 +124,35 @@ export default function TestManagement() {
           setOriginalModule(null);
         }
       }
-
-      // 2. Perform background delete
-      const docRef = doc(db, 'modules', `module_${modId}`);
-      deleteDoc(docRef).catch(err => {
-        console.error("Error deleting module from Firestore in background:", err);
-      });
     } catch (err) {
-      console.error("Error deleting module locally:", err);
-      alert("Не вдалося видалити модуль.");
+      console.error("Error deleting module:", err);
+      alert("Не вдалося видалити модуль на сервері.");
     }
   };
 
-  const handleSaveModule = () => {
+  const handleSaveModule = async () => {
     if (!selectedModule) return;
     setIsSaving(true);
     try {
-      // Update local state instantly so the UI feels responsive
-      setModules(prev => prev.map(m => m.id === selectedModule.id ? selectedModule : m).sort((a, b) => a.order - b.order));
-      setOriginalModule(JSON.parse(JSON.stringify(selectedModule)));
-      
-      const docRef = doc(db, 'modules', `module_${selectedModule.id}`);
-      
-      // Fire-and-forget background synchronization with Firestore
-      setDoc(docRef, selectedModule).catch(err => {
-        console.error("Error syncing module to Firestore in background:", err);
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/modules/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(selectedModule)
       });
+      if (!res.ok) throw new Error("Server error saving module");
+
+      const savedModule = await res.json();
+      
+      setModules(prev => prev.map(m => m.id === savedModule.id ? savedModule : m).sort((a, b) => a.order - b.order));
+      setSelectedModule(savedModule);
+      setOriginalModule(JSON.parse(JSON.stringify(savedModule)));
     } catch (err) {
-      console.error("Error saving module locally:", err);
-      alert("Не вдалося зберегти зміни.");
+      console.error("Error saving module:", err);
+      alert("Не вдалося зберегти зміни на сервері.");
     } finally {
       setIsSaving(false);
     }

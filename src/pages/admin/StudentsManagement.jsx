@@ -1,113 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Search, BarChart2, MoreVertical, Plus, Download, ChevronLeft, ChevronRight, X, Check, HelpCircle, Calendar } from 'lucide-react';
-import { db } from '../../firebase/config';
-import { collection, onSnapshot, setDoc, doc, addDoc } from 'firebase/firestore';
+import { useAuth } from '../../context/AuthContext';
 import { courseModules } from '../../data/courseData';
 
-// Seeding function to create sample students if database is empty
-const seedStudents = async () => {
-  const sampleStudents = [
-    {
-      uid: "ST-001",
-      email: "shevchenko@university.edu",
-      firstName: "Тарас",
-      lastName: "Шевченко",
-      middleName: "Григорович",
-      group: "ІП-31",
-      progress: 60,
-      role: "student",
-      status: "active",
-      lastActive: new Date(Date.now() - 3600000 * 2).toLocaleString('uk-UA'),
-      completedModules: [1, 2, 3],
-      quizAttempts: {
-        "module_1": {
-          score: 95,
-          takenAt: new Date(Date.now() - 86400000 * 3).toISOString(),
-          answers: [
-            { questionText: "Який тип даних використовується для збереження логічних значень true або false?", selectedOption: "bool", correctOption: "bool", isCorrect: true },
-            { questionText: "Який цикл виконується хоча б один раз, навіть якщо початкова умова є хибною?", selectedOption: "do while", correctOption: "do while", isCorrect: true }
-          ]
-        },
-        "module_2": {
-          score: 85,
-          takenAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-          answers: [
-            { questionText: "Який принцип ООП полягає у приховуванні деталей реалізації та обмеженні прямого доступу до даних?", selectedOption: "Інкапсуляція", correctOption: "Інкапсуляція", isCorrect: true },
-            { questionText: "Який оператор використовується у C# для успадкування класу?", selectedOption: ":", correctOption: ":", isCorrect: true }
-          ]
-        },
-        "module_3": {
-          score: 90,
-          takenAt: new Date(Date.now() - 86400000 * 1).toISOString(),
-          answers: [
-            { questionText: "Де зазвичай зберігаються змінні значимих типів (Value Types) у C#?", selectedOption: "У стеку (Stack)", correctOption: "У стеку (Stack)", isCorrect: true }
-          ]
-        }
-      }
-    },
-    {
-      uid: "ST-002",
-      email: "ukrainka@university.edu",
-      firstName: "Леся",
-      lastName: "Українка",
-      middleName: "Петрівна",
-      group: "ІП-31",
-      progress: 40,
-      role: "student",
-      status: "active",
-      lastActive: new Date(Date.now() - 3600000 * 5).toLocaleString('uk-UA'),
-      completedModules: [1, 2],
-      quizAttempts: {
-        "module_1": {
-          score: 90,
-          takenAt: new Date(Date.now() - 86400000 * 4).toISOString(),
-          answers: [
-            { questionText: "Який тип даних використовується для збереження логічних значень true або false?", selectedOption: "bool", correctOption: "bool", isCorrect: true }
-          ]
-        },
-        "module_2": {
-          score: 50,
-          takenAt: new Date(Date.now() - 86400000 * 3).toISOString(),
-          answers: [
-            { questionText: "Який принцип ООП полягає у приховуванні деталей реалізації та обмеженні прямого доступу до даних?", selectedOption: "Поліморфізм", correctOption: "Інкапсуляція", isCorrect: false }
-          ]
-        }
-      }
-    },
-    {
-      uid: "ST-003",
-      email: "franko@university.edu",
-      firstName: "Іван",
-      lastName: "Франко",
-      middleName: "Якович",
-      group: "ІП-32",
-      progress: 20,
-      role: "student",
-      status: "active",
-      lastActive: new Date(Date.now() - 3600000 * 24).toLocaleString('uk-UA'),
-      completedModules: [1],
-      quizAttempts: {
-        "module_1": {
-          score: 45,
-          takenAt: new Date().toISOString(),
-          answers: [
-            { questionText: "Який тип даних використовується для збереження логічних значень true або false?", selectedOption: "int", correctOption: "bool", isCorrect: false }
-          ]
-        }
-      }
-    }
-  ];
-
-  for (const student of sampleStudents) {
-    try {
-      await setDoc(doc(db, 'users', student.uid), student);
-    } catch (e) {
-      console.warn("Failed to seed student:", student.uid, e);
-    }
-  }
-};
-
 export default function StudentsManagement() {
+  const { getAuthHeaders } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('');
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
@@ -124,56 +21,44 @@ export default function StudentsManagement() {
   const [selectedModuleId, setSelectedModuleId] = useState(null);
 
   useEffect(() => {
-    // 1. Subscribe to users list in real time
-    const unsubscribeUsers = onSnapshot(collection(db, 'users'), async (snapshot) => {
-      const list = [];
-      snapshot.forEach(docSnap => {
-        const data = docSnap.data();
-        if (data.role === 'student') {
-          const fullName = `${data.lastName || ''} ${data.firstName || ''} ${data.middleName || ''}`.trim();
-          list.push({
-            id: docSnap.id,
-            name: fullName || data.email || 'Студент',
-            group: data.group || 'Не вказано',
-            progress: data.progress || 0,
-            status: data.status || 'active',
-            lastActive: data.lastActive || 'Нещодавно',
-            quizAttempts: data.quizAttempts || {}
-          });
-        }
-      });
+    const fetchStudentsAndModules = async () => {
+      try {
+        const headers = {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
+        };
 
-      // Seed if empty and finished fetching
-      if (list.length === 0 && !snapshot.metadata.fromCache) {
-        console.log("Users empty, seeding sample students...");
-        await seedStudents();
-      } else {
-        setStudents(list);
+        const studentsRes = await fetch('/api/auth/students', { headers });
+        if (studentsRes.ok) {
+          const list = await studentsRes.json();
+          const formattedList = list.map(student => {
+            const fullName = `${student.lastName || ''} ${student.firstName || ''} ${student.middleName || ''}`.trim();
+            return {
+              id: student.id,
+              name: fullName || student.email || 'Студент',
+              group: student.group || 'Не вказано',
+              progress: student.progress || 0,
+              status: student.progress === 100 ? 'completed' : 'active',
+              lastActive: student.lastActive ? new Date(student.lastActive).toLocaleString('uk-UA') : 'Нещодавно',
+              quizAttempts: student.quizAttempts || {}
+            };
+          });
+          setStudents(formattedList);
+        }
+
+        const modulesRes = await fetch('/api/modules');
+        if (modulesRes.ok) {
+          const mods = await modulesRes.json();
+          setModules(mods);
+        }
+      } catch (error) {
+        console.error("Error loading students data:", error);
+      } finally {
         setLoading(false);
       }
-    }, (error) => {
-      console.error("Error listening to student users:", error);
-      setLoading(false);
-    });
-
-    // 2. Fetch Modules for dynamic names mapping
-    const unsubscribeModules = onSnapshot(collection(db, 'modules'), (snapshot) => {
-      const mods = [];
-      snapshot.forEach(docSnap => {
-        mods.push({ id: docSnap.data().id, ...docSnap.data() });
-      });
-      if (mods.length === 0) {
-        mods.push(...courseModules.map((mod, idx) => ({ ...mod, id: mod.id, order: idx + 1 })));
-      }
-      setModules(mods);
-    }, (error) => {
-      console.error("Error listening to modules:", error);
-    });
-
-    return () => {
-      unsubscribeUsers();
-      unsubscribeModules();
     };
+
+    fetchStudentsAndModules();
   }, []);
 
   const handleViewStats = (student) => {

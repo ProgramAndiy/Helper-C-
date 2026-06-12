@@ -10,6 +10,10 @@ export default defineConfig({
         target: 'https://api.paiza.io',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api-compiler/, '')
+      },
+      '/api': {
+        target: 'http://localhost:5147',
+        changeOrigin: true
       }
     }
   }

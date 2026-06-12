@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, BookOpen, Settings, LogOut, Code, Menu, X } from 'lucide-react';
-import { auth } from '../firebase/config';
-import { signOut } from 'firebase/auth';
 import { useAuth } from '../context/AuthContext';
 
 export default function MainLayout({ role }) {
@@ -10,7 +8,7 @@ export default function MainLayout({ role }) {
   const navigate = useNavigate();
   const isAdmin = role === 'admin';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { userData } = useAuth();
+  const { userData, logout } = useAuth();
   
   const displayName = userData?.firstName 
     ? `${userData.firstName}` 
@@ -27,7 +25,7 @@ export default function MainLayout({ role }) {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      logout();
       navigate('/login');
     } catch (error) {
       console.error("Error signing out:", error);

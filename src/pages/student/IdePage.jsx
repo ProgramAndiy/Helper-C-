@@ -3,8 +3,6 @@ import { Play, Check, AlertTriangle, ArrowLeft, ArrowRight, ChevronLeft, Chevron
 import { useNavigate, useLocation } from 'react-router-dom';
 import { courseModules } from '../../data/courseData';
 import { useAuth } from '../../context/AuthContext';
-import { db } from '../../firebase/config';
-import { doc, setDoc, getDoc, getDocs, collection } from 'firebase/firestore';
 
 export default function IdePage() {
   const navigate = useNavigate();
@@ -57,55 +55,30 @@ export default function IdePage() {
 
   useEffect(() => {
     const fetchActiveModule = async () => {
-      // 1. If location.state?.module has tasks, we already have everything.
       if (location.state?.module?.tasks) return;
 
       try {
         let moduleId = location.state?.module?.id;
-        
-        // 2. If no module ID in state (direct click from sidebar), find active module from progress
-        if (!moduleId) {
-          const completedModules = userData?.completedModules || [];
+        const res = await fetch('/api/modules');
+        if (res.ok) {
+          const list = await res.json();
           
-          // Fetch modules to see their order
-          const fetchPromise = getDocs(collection(db, 'modules'));
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error("Timeout")), 3000)
-          );
-          
-          let list = [];
-          try {
-            const querySnapshot = await Promise.race([fetchPromise, timeoutPromise]);
-            querySnapshot.forEach(docSnap => {
-              list.push({ id: docSnap.data().id, ...docSnap.data() });
-            });
-            list.sort((a, b) => (a.order || 0) - (b.order || 0));
-          } catch (err) {
-            console.error("Error fetching modules list:", err);
-            list = courseModules;
+          if (!moduleId) {
+            const completedModules = userData?.completedModules || [];
+            const activeMod = list.find(m => !completedModules.includes(m.id)) || list[list.length - 1] || courseModules[0];
+            moduleId = activeMod.id;
           }
-          
-          // Find first uncompleted module
-          const activeMod = list.find(m => !completedModules.includes(m.id)) || list[list.length - 1] || courseModules[0];
-          moduleId = activeMod.id;
-        }
 
-        // 3. Fetch full module details from Firestore
-        const fetchPromise = getDoc(doc(db, 'modules', `module_${moduleId}`));
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Timeout")), 3000)
-        );
-        const docSnap = await Promise.race([fetchPromise, timeoutPromise]);
-        
-        if (docSnap.exists()) {
-          setModuleData({ docId: docSnap.id, ...docSnap.data() });
-        } else {
-          // Fallback to static data
-          const staticMod = courseModules.find(m => m.id === moduleId) || courseModules[0];
-          setModuleData(staticMod);
+          const target = list.find(m => m.id === moduleId);
+          if (target) {
+            setModuleData(target);
+          } else {
+            const staticMod = courseModules.find(m => m.id === moduleId) || courseModules[0];
+            setModuleData(staticMod);
+          }
         }
       } catch (err) {
-        console.error("Error loading IDE module:", err);
+        console.error("Error loading IDE module from API:", err);
       }
     };
 
@@ -208,7 +181,6 @@ export default function IdePage() {
     if (currentUser) {
       const completedModules = userData?.completedModules || [];
       
-      // Get the score of the quiz for this module
       const quizAttempts = userData?.quizAttempts || {};
       const moduleAttempt = quizAttempts[`module_${moduleData.id}`];
       if (moduleAttempt) {
@@ -216,24 +188,29 @@ export default function IdePage() {
       }
 
       if (!completedModules.includes(moduleData.id)) {
-        const newCompleted = [...completedModules, moduleData.id];
-        const newProgress = Math.round((newCompleted.length / courseModules.length) * 100);
-        
-        const updatedData = {
-          ...userData,
-          uid: currentUser.uid,
-          email: currentUser.email || '',
-          completedModules: newCompleted,
-          progress: newProgress,
-          role: userData?.role || 'student'
-        };
-        
-        // Fire and forget to avoid hanging
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        setDoc(userDocRef, updatedData, { merge: true }).catch(error => {
-          console.error("Error saving student progress:", error);
-        });
-        setUserData(updatedData);
+        try {
+          const token = localStorage.getItem('token');
+          const res = await fetch('/api/progress/task', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(moduleData.id)
+          });
+          
+          if (res.ok) {
+            const data = await res.json();
+            const updatedData = {
+              ...userData,
+              completedModules: data.completedModules,
+              progress: data.progress
+            };
+            setUserData(updatedData);
+          }
+        } catch (error) {
+          console.error("Error saving student progress to API:", error);
+        }
       }
     }
     

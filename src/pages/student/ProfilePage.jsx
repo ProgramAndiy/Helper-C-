@@ -2,13 +2,11 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, School, Users, Save, Award, Calendar, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { db } from '../../firebase/config';
-import { doc, setDoc, collection, getDocs } from 'firebase/firestore';
 import { courseModules } from '../../data/courseData';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { currentUser, userData, setUserData } = useAuth();
+  const { currentUser, userData, setUserData, updateProfile } = useAuth();
 
   const [profile, setProfile] = useState({
     lastName: '',
@@ -46,28 +44,21 @@ export default function ProfilePage() {
     }
   }, [userData, currentUser]);
 
-  // Load modules from Firestore for certificate matching
+  // Load modules from C# API
   useEffect(() => {
     const fetchModules = async () => {
       try {
-        const fetchPromise = getDocs(collection(db, 'modules'));
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Firestore fetch timed out")), 2000)
-        );
-
-        const querySnapshot = await Promise.race([fetchPromise, timeoutPromise]);
-        let list = [];
-        querySnapshot.forEach(docSnap => {
-          list.push({ id: docSnap.data().id, ...docSnap.data() });
-        });
-
-        if (list.length === 0) {
-          list = courseModules.map((mod, idx) => ({ ...mod, id: mod.id, order: idx + 1 }));
+        const token = localStorage.getItem('token');
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        const res = await fetch('/api/modules', { headers });
+        if (res.ok) {
+          const list = await res.json();
+          setDbModules(list);
+        } else {
+          setDbModules(courseModules);
         }
-        list.sort((a, b) => (a.order || 0) - (b.order || 0));
-        setDbModules(list);
       } catch (err) {
-        console.error("Error fetching modules from Firestore:", err);
+        console.error("Error fetching modules from API:", err);
         setDbModules(courseModules);
       } finally {
         setLoadingModules(false);
@@ -85,32 +76,19 @@ export default function ProfilePage() {
     if (!currentUser) return;
 
     try {
-      const userDocRef = doc(db, 'users', currentUser.uid);
-      const updatedData = {
-        ...userData,
-        uid: currentUser.uid,
-        email: profile.email,
-        lastName: profile.lastName,
+      await updateProfile({
         firstName: profile.firstName,
+        lastName: profile.lastName,
         middleName: profile.middleName,
         university: profile.university,
-        year: profile.year,
-        admissionYear: profile.year, // keep both names for safety
-        group: profile.group,
-        role: userData?.role || 'student' // preserve role
-      };
-
-      // Fire and forget to prevent UI freeze
-      setDoc(userDocRef, updatedData, { merge: true }).catch(error => {
-        console.error("Error updating profile:", error);
-        setErrorMsg("Не вдалося зберегти зміни. Перевірте з'єднання з базою даних.");
+        admissionYear: profile.year ? parseInt(profile.year) : null,
+        group: profile.group
       });
-      
-      setUserData(updatedData); // Update context state immediately
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 3000);
     } catch (error) {
-      console.error("Error setting profile data:", error);
+      console.error("Error updating profile:", error);
+      setErrorMsg(error.message || "Не вдалося зберегти зміни. Перевірте з'єднання з сервером.");
     }
   };
 

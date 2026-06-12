@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, UserCircle, Code, BookOpen, ArrowRight } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { courseModules } from '../../data/courseData';
-import { db } from '../../firebase/config';
-import { collection, query, where, getDocs, limit, doc, getDoc } from 'firebase/firestore';
 
 export default function LessonPage() {
   const navigate = useNavigate();
@@ -42,14 +40,12 @@ export default function LessonPage() {
       setIsLoading(true);
       try {
         const moduleId = moduleInfo.id || 1;
-        const fetchPromise = getDoc(doc(db, 'modules', `module_${moduleId}`));
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Timeout")), 3000)
-        );
-        const docSnap = await Promise.race([fetchPromise, timeoutPromise]);
-        
-        if (docSnap.exists()) {
-          setModuleData({ docId: docSnap.id, ...docSnap.data() });
+        const token = localStorage.getItem('token');
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        const res = await fetch(`/api/modules/${moduleId}`, { headers });
+        if (res.ok) {
+          const data = await res.json();
+          setModuleData(data);
         }
       } catch (err) {
         console.error("Error fetching single module:", err);
@@ -64,10 +60,11 @@ export default function LessonPage() {
   useEffect(() => {
     const fetchTeacher = async () => {
       try {
-        const q = query(collection(db, 'users'), where('role', '==', 'admin'), limit(1));
-        const querySnapshot = await getDocs(q);
-        if (!querySnapshot.empty) {
-          const teacherData = querySnapshot.docs[0].data();
+        const token = localStorage.getItem('token');
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        const res = await fetch('/api/auth/teacher', { headers });
+        if (res.ok) {
+          const teacherData = await res.json();
           const fullName = `${teacherData.lastName || ''} ${teacherData.firstName || ''}`.trim();
           if (fullName) {
             setTeacherName(fullName);

@@ -1,9 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Code } from 'lucide-react';
-import { auth, db } from '../firebase/config';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
 
 const getFriendlyErrorMessage = (error) => {
@@ -22,7 +19,7 @@ const getFriendlyErrorMessage = (error) => {
     case 'auth/popup-closed-by-user':
       return 'Вхід скасовано (вікно авторизації закрилося).';
     case 'auth/operation-not-allowed':
-      return 'Цей метод входу наразі вимкнено у консолі Firebase.';
+      return 'Цей метод входу наразі вимкнено на сервері.';
     default:
       if (error.message && error.message.includes('auth/email-already-in-use')) {
         return 'Ця електронна адреса вже зареєстрована. Будь ласка, перейдіть на вкладку "Увійти" або скористайтеся іншою адресою.';
@@ -43,15 +40,16 @@ export default function AuthPage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
 
-  // States for student registration
+  // States for registration
   const [lastName, setLastName] = useState('');
   const [firstName, setFirstName] = useState('');
   const [middleName, setMiddleName] = useState('');
   const [university, setUniversity] = useState('');
   const [admissionYear, setAdmissionYear] = useState('');
   const [group, setGroup] = useState('');
+  const [teacherAccessCode, setTeacherAccessCode] = useState('');
   
-  const { setUserRole, setUserData } = useAuth();
+  const { login, register } = useAuth();
 
   useEffect(() => {
     if (groupParam) {
@@ -65,42 +63,34 @@ export default function AuthPage() {
     e.preventDefault();
     setErrorMsg('');
     try {
-      await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
-      
       if (isLogin) {
-        await signInWithEmailAndPassword(auth, email, password);
-        // Role is loaded inside AuthContext.jsx onAuthStateChanged automatically.
-      } else {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-
-        // Save user role and details to Firestore
-        const userDocRef = doc(db, 'users', user.uid);
-        const userData = {
-          uid: user.uid,
-          email: user.email,
-          role: role,
-          createdAt: new Date().toISOString()
-        };
-
-        if (role === 'student') {
-          userData.lastName = lastName;
-          userData.firstName = firstName;
-          userData.middleName = middleName;
-          userData.university = university;
-          userData.admissionYear = admissionYear;
-          userData.group = group;
+        const data = await login(email, password);
+        if (data.user.role === 'teacher') {
+          navigate('/admin');
+        } else {
+          navigate('/student');
         }
-
-        await setDoc(userDocRef, userData);
-        setUserData(userData);
-        setUserRole(role);
+      } else {
+        await register(
+          email,
+          password,
+          firstName,
+          lastName,
+          middleName,
+          university,
+          admissionYear,
+          group,
+          role === 'admin' ? 'teacher' : 'student',
+          teacherAccessCode
+        );
+        if (role === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/student');
+        }
       }
-      
-      if (role === 'admin') navigate('/admin');
-      else navigate('/student');
     } catch (error) {
-      setErrorMsg(getFriendlyErrorMessage(error));
+      setErrorMsg(error.message || 'Сталася помилка при авторизації. Спробуйте ще раз.');
     }
   };
 
@@ -137,7 +127,7 @@ export default function AuthPage() {
         <form style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem', textAlign: 'left' }} onSubmit={handleLogin}>
           {errorMsg && <div style={{ color: 'var(--danger)', fontSize: '0.85rem', marginBottom: '0.5rem', textAlign: 'center' }}>{errorMsg}</div>}
           
-          {!isLogin && role === 'student' && (
+          {!isLogin && (
             <>
               <div style={{ display: 'flex', gap: '1rem' }}>
                 <div style={{ flex: 1 }}>
@@ -174,45 +164,63 @@ export default function AuthPage() {
                   onChange={(e) => setMiddleName(e.target.value)}
                 />
               </div>
-              <div>
-                <label className="input-label">Навчальний заклад</label>
-                <input 
-                  type="text" 
-                  className="input-field" 
-                  placeholder="НТУУ КПІ ім. І. Сікорського" 
-                  required 
-                  value={university}
-                  onChange={(e) => setUniversity(e.target.value)}
-                />
-              </div>
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <div style={{ flex: 1 }}>
-                  <label className="input-label">Рік вступу</label>
+
+              {role === 'student' ? (
+                <>
+                  <div>
+                    <label className="input-label">Навчальний заклад</label>
+                    <input 
+                      type="text" 
+                      className="input-field" 
+                      placeholder="НТУУ КПІ ім. І. Сікорського" 
+                      required 
+                      value={university}
+                      onChange={(e) => setUniversity(e.target.value)}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <div style={{ flex: 1 }}>
+                      <label className="input-label">Рік вступу</label>
+                      <input 
+                        type="number" 
+                        className="input-field" 
+                        placeholder="2023" 
+                        min="2000" 
+                        max="2100" 
+                        required 
+                        value={admissionYear}
+                        onChange={(e) => setAdmissionYear(e.target.value)}
+                      />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label className="input-label">Група</label>
+                      <input 
+                        type="text" 
+                        className="input-field" 
+                        placeholder="ІП-31" 
+                        required 
+                        value={group}
+                        onChange={(e) => setGroup(e.target.value)}
+                        disabled={!!groupParam}
+                        style={groupParam ? { opacity: 0.7, cursor: 'not-allowed', backgroundColor: 'rgba(255,255,255,0.05)' } : {}}
+                      />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <label className="input-label" style={{ color: 'var(--accent)', fontWeight: 'bold' }}>Код доступу викладача</label>
                   <input 
-                    type="number" 
+                    type="password" 
                     className="input-field" 
-                    placeholder="2023" 
-                    min="2000" 
-                    max="2100" 
+                    placeholder="Введіть секретний код викладача" 
                     required 
-                    value={admissionYear}
-                    onChange={(e) => setAdmissionYear(e.target.value)}
+                    value={teacherAccessCode}
+                    onChange={(e) => setTeacherAccessCode(e.target.value)}
+                    style={{ border: '1px solid var(--accent)' }}
                   />
                 </div>
-                <div style={{ flex: 1 }}>
-                  <label className="input-label">Група</label>
-                  <input 
-                    type="text" 
-                    className="input-field" 
-                    placeholder="ІП-31" 
-                    required 
-                    value={group}
-                    onChange={(e) => setGroup(e.target.value)}
-                    disabled={!!groupParam}
-                    style={groupParam ? { opacity: 0.7, cursor: 'not-allowed', backgroundColor: 'rgba(255,255,255,0.05)' } : {}}
-                  />
-                </div>
-              </div>
+              )}
             </>
           )}
 

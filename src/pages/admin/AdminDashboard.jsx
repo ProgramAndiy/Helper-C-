@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Activity, Users, AlertCircle, CheckCircle, Bell } from 'lucide-react';
-import { db } from '../../firebase/config';
-import { collection, onSnapshot } from 'firebase/firestore';
 import { courseModules } from '../../data/courseData';
 
 export default function AdminDashboard() {
@@ -10,41 +8,32 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 1. Subscribe to users collection in real time
-    const unsubscribeUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
-      const list = [];
-      snapshot.forEach(docSnap => {
-        const data = docSnap.data();
-        if (data.role === 'student') {
-          list.push({ id: docSnap.id, ...data });
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+        // Fetch students
+        const studentsRes = await fetch('/api/auth/students', { headers });
+        if (studentsRes.ok) {
+          const studentsData = await studentsRes.json();
+          setStudents(studentsData);
         }
-      });
-      setStudents(list);
-      setLoading(false);
-    }, (error) => {
-      console.error("Error listening to users:", error);
-      setLoading(false);
-    });
 
-    // 2. Subscribe to modules collection in real time
-    const unsubscribeModules = onSnapshot(collection(db, 'modules'), (snapshot) => {
-      const list = [];
-      snapshot.forEach(docSnap => {
-        list.push({ id: docSnap.data().id, ...docSnap.data() });
-      });
-      if (list.length === 0) {
-        list.push(...courseModules.map((mod, idx) => ({ ...mod, id: mod.id, order: idx + 1 })));
+        // Fetch modules
+        const modulesRes = await fetch('/api/modules', { headers });
+        if (modulesRes.ok) {
+          const modulesData = await modulesRes.json();
+          setModules(modulesData);
+        }
+      } catch (error) {
+        console.error("Error fetching admin dashboard data:", error);
+      } finally {
+        setLoading(false);
       }
-      list.sort((a, b) => (a.order || 0) - (b.order || 0));
-      setModules(list);
-    }, (error) => {
-      console.error("Error listening to modules:", error);
-    });
-
-    return () => {
-      unsubscribeUsers();
-      unsubscribeModules();
     };
+
+    fetchData();
   }, []);
 
   // Compute stats
@@ -83,6 +72,7 @@ export default function AdminDashboard() {
         score: attempt.score,
         isFailed: isFailed,
         takenAt: attempt.takenAt ? new Date(attempt.takenAt) : new Date(0),
+        takenAtStr: attempt.takenAt ? new Date(attempt.takenAt).toLocaleString('uk-UA') : '',
         message: isFailed 
           ? `провалив(ла) тест "${getModuleTitle(modKey)}" з результатом ${attempt.score}%.`
           : `успішно склав(ла) тест "${getModuleTitle(modKey)}" на ${attempt.score}%.`

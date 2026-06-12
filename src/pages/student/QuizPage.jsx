@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check, X, Award, HelpCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { db } from '../../firebase/config';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { courseModules } from '../../data/courseData';
 
 export default function QuizPage() {
@@ -27,14 +25,13 @@ export default function QuizPage() {
     const fetchModuleFromDb = async () => {
       try {
         const moduleId = moduleInfo.id || 1;
-        const fetchPromise = getDoc(doc(db, 'modules', `module_${moduleId}`));
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Timeout")), 3000)
-        );
-        const docSnap = await Promise.race([fetchPromise, timeoutPromise]);
-        
-        if (docSnap.exists()) {
-          setModuleData({ docId: docSnap.id, ...docSnap.data() });
+        const res = await fetch('/api/modules');
+        if (res.ok) {
+          const list = await res.json();
+          const target = list.find(m => m.id === moduleId);
+          if (target) {
+            setModuleData(target);
+          }
         }
       } catch (err) {
         console.error("Error fetching single module for quiz:", err);
@@ -69,6 +66,7 @@ export default function QuizPage() {
       questionText: activeQuiz.question,
       selectedOption: activeQuiz.options[selectedOption],
       correctOption: activeQuiz.options[activeQuiz.correctAnswerIndex],
+      selectedOptionIndex: selectedOption,
       isCorrect
     };
 
@@ -79,51 +77,50 @@ export default function QuizPage() {
       setCurrentQuizIndex(currentQuizIndex + 1);
       setSelectedOption(null);
     } else {
-      // Calculate final score
-      const correctCount = updatedAnswers.filter(a => a.isCorrect).length;
-      const scorePercent = quizzes.length > 0 
-        ? Math.round((correctCount / quizzes.length) * 100) 
-        : 100;
-
       setIsSubmitted(true);
       setIsSubmittingDb(true);
 
       // Save to database
       if (currentUser) {
         try {
-          const userDocRef = doc(db, 'users', currentUser.uid);
-          const currentAttempts = userData?.quizAttempts || {};
+          const token = localStorage.getItem('token');
+          const res = await fetch('/api/progress/quiz', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              moduleId: moduleData.id,
+              answers: updatedAnswers.map(a => a.selectedOptionIndex)
+            })
+          });
+
+          if (!res.ok) {
+            throw new Error("Не вдалося зберегти результати тесту");
+          }
+
+          const result = await res.json();
           
           const updatedAttempts = {
-            ...currentAttempts,
+            ...userData?.quizAttempts,
             [`module_${moduleData.id}`]: {
-              score: scorePercent,
-              answers: updatedAnswers,
+              score: result.score,
+              answers: updatedAnswers.map(a => a.selectedOptionIndex),
               takenAt: new Date().toISOString()
             }
           };
 
           const updatedData = {
             ...userData,
-            uid: currentUser.uid,
-            email: currentUser.email || '',
-            quizAttempts: updatedAttempts,
-            role: userData?.role || 'student'
+            quizAttempts: updatedAttempts
           };
 
-          // Fire and forget (or with a short timeout) to prevent UI hanging on bad network
-          setDoc(userDocRef, updatedData, { merge: true }).catch(err => {
-            console.error("Error saving quiz score to Firestore:", err);
-          });
-          
-          setUserData(updatedData); // Sync context immediately
+          setUserData(updatedData);
         } catch (err) {
-          console.error("Error preparing quiz save:", err);
+          console.error("Error saving quiz score to API:", err);
         } finally {
-          // Short delay for better UX before enabling the button
-          setTimeout(() => {
-            setIsSubmittingDb(false);
-          }, 500);
+          setIsSubmittingDb(false);
         }
       } else {
         setIsSubmittingDb(false);
