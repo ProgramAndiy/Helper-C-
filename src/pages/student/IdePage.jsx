@@ -99,13 +99,16 @@ export default function IdePage() {
       [activeTask.id]: "Компіляція на сервері...\n"
     }));
     
-    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const isLocal = window.location.hostname === 'localhost' || 
+                    window.location.hostname === '127.0.0.1' || 
+                    window.location.hostname.endsWith('ngrok-free.dev') ||
+                    window.location.hostname.endsWith('ngrok.io');
     
     const getCompilerUrl = (path) => {
       const targetUrl = `https://api.paiza.io/${path}`;
       return isLocal 
         ? `/api-compiler/${path}` 
-        : `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+        : `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`;
     };
 
     try {
