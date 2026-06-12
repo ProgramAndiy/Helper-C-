@@ -26,3 +26,7 @@ dist-ssr
 # ngrok binaries and shortcuts
 ngrok.exe
 ngrok.lnk
+
+# C# Build outputs
+**/bin/
+**/obj/
