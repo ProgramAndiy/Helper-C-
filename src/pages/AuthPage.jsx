@@ -49,7 +49,18 @@ export default function AuthPage() {
   const [group, setGroup] = useState('');
   const [teacherAccessCode, setTeacherAccessCode] = useState('');
   
-  const { login, register } = useAuth();
+  const { login, register, userData } = useAuth();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (userData) {
+      if (userData.role === 'teacher') {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate('/student', { replace: true });
+      }
+    }
+  }, [userData, navigate]);
 
   useEffect(() => {
     if (groupParam) {

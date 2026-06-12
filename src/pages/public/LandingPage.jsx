@@ -69,6 +69,23 @@ export default function LandingPage() {
           </p>
         </div>
       </main>
+
+      {/* Footer */}
+      <footer style={{ 
+        padding: '2.5rem 2rem', 
+        textAlign: 'center', 
+        borderTop: '1px solid rgba(255, 255, 255, 0.05)', 
+        background: 'rgba(15, 12, 22, 0.6)',
+        color: 'var(--text-muted)',
+        fontSize: '0.9rem'
+      }}>
+        <p style={{ margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', flexWrap: 'wrap' }}>
+          <span>© {new Date().getFullYear()} Helper C#.</span>
+          <span>Розроблено</span>
+          <strong style={{ color: 'var(--primary)' }}>TUZ</strong>.
+          <span>Всі права захищені.</span>
+        </p>
+      </footer>
     </div>
   );
 }

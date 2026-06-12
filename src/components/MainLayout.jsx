@@ -1,14 +1,28 @@
 import { useState, useEffect } from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { LayoutDashboard, Users, BookOpen, Settings, LogOut, Code, Menu, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function MainLayout({ role }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const isAdmin = role === 'admin';
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { userData, logout } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Якщо користувач не авторизований, перенаправляємо на сторінку входу
+  if (!userData) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Якщо роль користувача не відповідає необхідній для цього шляху
+  const userActualRole = userData.role; // 'teacher' або 'student'
+  const requiredRole = role === 'admin' ? 'teacher' : 'student';
+
+  if (userActualRole !== requiredRole) {
+    return <Navigate to={userActualRole === 'teacher' ? '/admin' : '/student'} replace />;
+  }
+
+  const isAdmin = role === 'admin';
   
   const displayName = userData?.firstName 
     ? `${userData.firstName}` 
