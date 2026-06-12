@@ -9,6 +9,11 @@ export default function MainLayout({ role }) {
   const { userData, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Close menu on route change
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
+
   // Якщо користувач не авторизований, перенаправляємо на сторінку входу
   if (!userData) {
     return <Navigate to="/login" replace />;
@@ -31,11 +36,6 @@ export default function MainLayout({ role }) {
   const avatarLetter = userData?.firstName 
     ? userData.firstName.charAt(0).toUpperCase() 
     : (isAdmin ? 'В' : 'С');
-
-  // Close menu on route change
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [location.pathname]);
 
   const handleLogout = async () => {
     try {
