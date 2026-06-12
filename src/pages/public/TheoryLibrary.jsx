@@ -186,16 +186,16 @@ export default function TheoryLibrary() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg-primary)' }}>
-      <header style={{ padding: '1rem 2rem', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '2rem', background: 'rgba(15, 12, 22, 0.9)', backdropFilter: 'blur(10px)', zIndex: 10 }}>
+      <header className="dashboard-header" style={{ padding: '1rem 2rem', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '2rem', background: 'rgba(15, 12, 22, 0.9)', backdropFilter: 'blur(10px)', zIndex: 10 }}>
         <button className="btn" style={{ background: 'transparent', color: 'var(--text-muted)', padding: 0 }} onClick={() => navigate(-1)}>
           <ArrowLeft size={20} /> Назад
         </button>
         <h2 style={{ margin: 0, color: 'var(--primary)' }}>Бібліотека C#</h2>
       </header>
 
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      <div className="theory-container">
         {/* Sidebar */}
-        <div style={{ width: '320px', background: 'var(--bg-secondary)', borderRight: '1px solid rgba(255,255,255,0.05)', overflowY: 'auto' }}>
+        <div className="theory-sidebar">
           {articles.map(article => (
             <div 
               key={article.id}
@@ -221,7 +221,7 @@ export default function TheoryLibrary() {
         </div>
 
         {/* Content */}
-        <div style={{ flex: 1, padding: '3rem 4rem', overflowY: 'auto', background: 'var(--bg-primary)' }}>
+        <div className="theory-content">
           <div className="animate-fade-in article-container" style={{ maxWidth: '900px', margin: '0 auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2.5rem', color: 'var(--primary)' }}>
               {activeArticle.icon}

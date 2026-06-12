@@ -156,10 +156,11 @@ export default function AdminDashboard() {
           </p>
           
           {/* Dynamic Bar Chart */}
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '1rem', height: '250px', padding: '1rem 0', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-            {chartData.map((stat, i) => (
-              <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }} title={stat.fullTitle}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{stat.value}%</span>
+          <div style={{ overflowX: 'auto' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem', height: '250px', padding: '1rem 0', borderBottom: '1px solid rgba(255,255,255,0.1)', minWidth: '400px' }}>
+              {chartData.map((stat, i) => (
+                <div key={i} style={{ flex: '1', minWidth: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }} title={stat.fullTitle}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{stat.value}%</span>
                 <div style={{ 
                   width: '100%', 
                   maxWidth: '40px', 
@@ -168,11 +169,12 @@ export default function AdminDashboard() {
                   borderRadius: '4px 4px 0 0',
                   transition: 'height 0.8s ease-out'
                 }}></div>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%' }}>
-                  {stat.label}
-                </span>
-              </div>
-            ))}
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%' }}>
+                    {stat.label}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 

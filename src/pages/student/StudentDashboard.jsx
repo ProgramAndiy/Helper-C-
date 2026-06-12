@@ -59,7 +59,7 @@ export default function StudentDashboard() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+      <div className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <h2>Дерево Навичок (Skill Tree)</h2>
         <div className="glass-panel" style={{ padding: '0.8rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--success)' }}>
           <Award size={20} />
@@ -122,7 +122,7 @@ export default function StudentDashboard() {
                     {mod.description}
                   </p>
 
-                  <div style={{ display: 'flex', gap: '1rem' }}>
+                  <div className="module-card-buttons" style={{ display: 'flex', gap: '1rem' }}>
                     <button 
                       className={`btn ${isLocked ? 'btn-secondary' : 'btn-primary'}`} 
                       disabled={isLocked}

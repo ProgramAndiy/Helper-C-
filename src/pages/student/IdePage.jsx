@@ -23,6 +23,7 @@ export default function IdePage() {
 
   const [codes, setCodes] = useState({});
   const [outputs, setOutputs] = useState({});
+  const [validations, setValidations] = useState({});
 
   const [isRunning, setIsRunning] = useState(false);
   const [showReference, setShowReference] = useState(false);
@@ -47,6 +48,16 @@ export default function IdePage() {
       tasks.forEach(t => {
         if (updated[t.id] === undefined) {
           updated[t.id] = "Натисніть 'Запустити', щоб скомпілювати код...";
+        }
+      });
+      return updated;
+    });
+
+    setValidations(prev => {
+      const updated = { ...prev };
+      tasks.forEach(t => {
+        if (updated[t.id] === undefined) {
+          updated[t.id] = false;
         }
       });
       return updated;
@@ -99,80 +110,60 @@ export default function IdePage() {
       [activeTask.id]: "Компіляція на сервері...\n"
     }));
     
-    const isLocal = window.location.hostname === 'localhost' || 
-                    window.location.hostname === '127.0.0.1' || 
-                    window.location.hostname.endsWith('ngrok-free.dev') ||
-                    window.location.hostname.endsWith('ngrok.io');
-    
-    const getCompilerUrl = (path) => {
-      const targetUrl = `https://api.paiza.io/${path}`;
-      return isLocal 
-        ? `/api-compiler/${path}` 
-        : `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`;
-    };
-
     try {
-      // Create execution runner via Paiza.io
-      const createResponse = await fetch(getCompilerUrl('runners/create'), {
+      const token = localStorage.getItem('token');
+      const createResponse = await fetch('/api/compiler/run', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
         body: JSON.stringify({
-          source_code: codes[activeTask.id] || "",
-          language: "csharp",
-          input: "",
-          longpoll: true,
-          longpoll_timeout: 10,
-          api_key: "guest"
+          code: codes[activeTask.id] || ""
         })
       });
       
-      const createData = await createResponse.json();
-      const runId = createData.id;
+      const data = await createResponse.json();
       
-      if (!runId) {
-        throw new Error("Не вдалося ініціалізувати компілятор.");
-      }
-
-      // Poll for compilation and execution details
-      let completed = false;
-      let attempts = 0;
-      let details = null;
-
-      while (!completed && attempts < 10) {
-        attempts++;
-        const statusResponse = await fetch(getCompilerUrl(`runners/get_details?id=${runId}&api_key=guest`));
-        details = await statusResponse.json();
-        
-        if (details.status === "completed") {
-          completed = true;
-        } else {
-          await new Promise(r => setTimeout(r, 1000));
-        }
-      }
-
-      if (!details || details.status !== "completed") {
-        throw new Error("Перевищено час очікування компіляції.");
+      if (!createResponse.ok) {
+        throw new Error(data.error || "Не вдалося ініціалізувати компілятор.");
       }
 
       let consoleOutput = "";
-      if (details.build_result === "failure") {
-        consoleOutput = `Помилка компіляції:\n${details.build_stderr}`;
+      if (data.buildStderr) {
+        consoleOutput = `Помилка компіляції:\n${data.buildStderr}`;
       } else {
-        consoleOutput = `Вивід програми:\n${details.stdout}`;
-        if (details.stderr) {
-          consoleOutput += `\nПомилка виконання:\n${details.stderr}`;
+        consoleOutput = `Вивід програми:\n${data.stdout}`;
+        if (data.stderr) {
+          consoleOutput += `\nПомилка виконання:\n${data.stderr}`;
         }
-        consoleOutput += `\n\nКод завершення: ${details.exit_code}`;
+      }
+
+      let isSuccess = false;
+      if (activeTask.expectedOutput && consoleOutput.includes(activeTask.expectedOutput)) {
+        isSuccess = true;
+      } else if (!activeTask.expectedOutput && !data.buildStderr) {
+        isSuccess = true; // No validation required, just successful build
       }
 
       setOutputs(prev => ({
         ...prev,
         [activeTask.id]: consoleOutput
       }));
+
+      setValidations(prev => ({
+        ...prev,
+        [activeTask.id]: isSuccess
+      }));
+
     } catch (err) {
       setOutputs(prev => ({
         ...prev,
         [activeTask.id]: `Помилка: ${err.message || "Не вдалося з'єднатися з сервером компілятора."}`
+      }));
+      setValidations(prev => ({
+        ...prev,
+        [activeTask.id]: false
       }));
     } finally {
       setIsRunning(false);
@@ -192,6 +183,12 @@ export default function IdePage() {
 
       if (!completedModules.includes(moduleData.id)) {
         try {
+          const submissions = tasks.map(t => ({
+             taskId: t.id,
+             code: codes[t.id] || "",
+             isSuccessful: validations[t.id] || false
+          }));
+
           const token = localStorage.getItem('token');
           const res = await fetch('/api/progress/task', {
             method: 'POST',
@@ -199,7 +196,10 @@ export default function IdePage() {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify(moduleData.id)
+            body: JSON.stringify({
+              moduleId: moduleData.id,
+              submissions: submissions
+            })
           });
           
           if (res.ok) {
@@ -323,11 +323,21 @@ export default function IdePage() {
           )}
 
           {activeTaskIndex < tasks.length - 1 ? (
-            <button className="btn btn-primary" style={{ flex: 1, padding: '0.8rem' }} onClick={() => handleTaskSwitch(activeTaskIndex + 1)}>
+            <button 
+              className="btn btn-primary" 
+              style={{ flex: 1, padding: '0.8rem', opacity: validations[activeTask.id] ? 1 : 0.5, cursor: validations[activeTask.id] ? 'pointer' : 'not-allowed' }} 
+              onClick={() => { if(validations[activeTask.id]) handleTaskSwitch(activeTaskIndex + 1); }}
+              disabled={!validations[activeTask.id]}
+            >
               Далі <ChevronRight size={18} />
             </button>
           ) : (
-            <button className="btn btn-primary" style={{ flex: 1, padding: '0.8rem', background: 'linear-gradient(135deg, var(--success), var(--primary))', boxShadow: 'none' }} onClick={handleFinishTest}>
+            <button 
+              className="btn btn-primary" 
+              style={{ flex: 1, padding: '0.8rem', background: 'linear-gradient(135deg, var(--success), var(--primary))', boxShadow: 'none', opacity: validations[activeTask.id] ? 1 : 0.5, cursor: validations[activeTask.id] ? 'pointer' : 'not-allowed' }} 
+              onClick={() => { if(validations[activeTask.id]) handleFinishTest(); }}
+              disabled={!validations[activeTask.id]}
+            >
               <Check size={18} /> Завершити
             </button>
           )}
@@ -364,10 +374,12 @@ export default function IdePage() {
 
         {/* Console / Output */}
         <div className="glass-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <div style={{ padding: '0.5rem 1.5rem', background: 'rgba(0,0,0,0.3)', borderBottom: '1px solid rgba(255,255,255,0.05)', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            Вивід компілятора
+          <div style={{ padding: '0.5rem 1.5rem', background: 'rgba(0,0,0,0.3)', borderBottom: '1px solid rgba(255,255,255,0.05)', color: 'var(--text-muted)', fontSize: '0.9rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>Вивід компілятора</span>
+            {validations[activeTask.id] === true && <span style={{color: 'var(--success)', fontWeight: 'bold', fontSize: '0.85rem'}}>✅ Завдання виконано!</span>}
+            {validations[activeTask.id] === false && outputs[activeTask.id] && outputs[activeTask.id] !== "Натисніть 'Запустити', щоб скомпілювати код..." && !isRunning && <span style={{color: 'var(--danger)', fontWeight: 'bold', fontSize: '0.85rem'}}>❌ Неправильний результат</span>}
           </div>
-          <div style={{ padding: '1rem 1.5rem', flex: 1, background: '#0a080f', fontFamily: 'Consolas, monospace', color: isRunning ? 'var(--text-muted)' : 'var(--success)', whiteSpace: 'pre-wrap', overflowY: 'auto', fontSize: '14px', lineHeight: '1.4' }}>
+          <div style={{ padding: '1rem 1.5rem', flex: 1, background: '#0a080f', fontFamily: 'Consolas, monospace', color: isRunning ? 'var(--text-muted)' : (validations[activeTask.id] ? 'var(--success)' : '#E0E0E0'), whiteSpace: 'pre-wrap', overflowY: 'auto', fontSize: '14px', lineHeight: '1.4' }}>
             {outputs[activeTask.id] || ""}
           </div>
         </div>

@@ -140,7 +140,7 @@ export default function AuthPage() {
           
           {!isLogin && (
             <>
-              <div style={{ display: 'flex', gap: '1rem' }}>
+              <div className="auth-form-row" style={{ display: 'flex', gap: '1rem' }}>
                 <div style={{ flex: 1 }}>
                   <label className="input-label">Прізвище</label>
                   <input 
@@ -189,7 +189,7 @@ export default function AuthPage() {
                       onChange={(e) => setUniversity(e.target.value)}
                     />
                   </div>
-                  <div style={{ display: 'flex', gap: '1rem' }}>
+                  <div className="auth-form-row" style={{ display: 'flex', gap: '1rem' }}>
                     <div style={{ flex: 1 }}>
                       <label className="input-label">Рік вступу</label>
                       <input 

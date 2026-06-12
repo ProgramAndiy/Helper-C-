@@ -31,5 +31,7 @@ namespace HelperC.Backend.Models
         public string InitialCode { get; set; } = string.Empty;
 
         public string? ReferenceCode { get; set; }
+
+        public string? ExpectedOutput { get; set; }
     }
 }

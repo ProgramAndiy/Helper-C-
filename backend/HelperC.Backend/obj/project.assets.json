@@ -3221,31 +3221,24 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\User\\.nuget\\packages\\": {},
-    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+    "C:\\Users\\Андрій Тасуй\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\User\\OneDrive\\Робочий стіл\\Helper-C--main\\backend\\HelperC.Backend\\HelperC.Backend.csproj",
+      "projectUniqueName": "C:\\Users\\Андрій Тасуй\\Desktop\\HelperCSharp_Latest\\backend\\HelperC.Backend\\HelperC.Backend.csproj",
       "projectName": "HelperC.Backend",
-      "projectPath": "C:\\Users\\User\\OneDrive\\Робочий стіл\\Helper-C--main\\backend\\HelperC.Backend\\HelperC.Backend.csproj",
-      "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\User\\OneDrive\\Робочий стіл\\Helper-C--main\\backend\\HelperC.Backend\\obj\\",
+      "projectPath": "C:\\Users\\Андрій Тасуй\\Desktop\\HelperCSharp_Latest\\backend\\HelperC.Backend\\HelperC.Backend.csproj",
+      "packagesPath": "C:\\Users\\Андрій Тасуй\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Андрій Тасуй\\Desktop\\HelperCSharp_Latest\\backend\\HelperC.Backend\\obj\\",
       "projectStyle": "PackageReference",
-      "fallbackFolders": [
-        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-      ],
       "configFilePaths": [
-        "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        "C:\\Users\\Андрій Тасуй\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net9.0"
       ],
       "sources": {
-        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {

@@ -7,33 +7,33 @@ export default function LandingPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--bg-primary)' }}>
       {/* Header (Fixed) */}
-      <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: 'rgba(15, 12, 22, 0.9)', backdropFilter: 'blur(10px)', padding: '1.5rem 3rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', cursor: 'pointer' }} onClick={() => navigate('/')}>
+      <header className="landing-header">
+        <div className="landing-logo" onClick={() => navigate('/')}>
           <Code size={32} />
-          <h1 style={{ fontSize: '1.5rem', margin: 0, color: 'var(--text-primary)' }}>Helper C#</h1>
+          <h1>Helper C#</h1>
         </div>
-        <nav style={{ display: 'flex', gap: '2rem' }}>
-          <button className="btn" style={{ background: 'transparent', color: 'var(--text-secondary)' }} onClick={() => navigate('/about')}>Про нас</button>
-          <button className="btn" style={{ background: 'transparent', color: 'var(--text-secondary)' }} onClick={() => navigate('/theory')}>Бібліотека C#</button>
+        <nav className="landing-nav">
+          <button className="btn nav-link" onClick={() => navigate('/about')}>Про нас</button>
+          <button className="btn nav-link" onClick={() => navigate('/theory')}>Бібліотека C#</button>
           <button className="btn btn-primary" onClick={() => navigate('/login')}>Увійти</button>
         </nav>
       </header>
 
       {/* Hero Section */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '8rem 2rem 4rem 2rem', textAlign: 'center', background: 'radial-gradient(circle at center, rgba(138, 43, 226, 0.15), transparent 60%)' }}>
-        <div className="animate-fade-in" style={{ maxWidth: '800px' }}>
-          <h1 style={{ fontSize: '3.5rem', marginBottom: '1.5rem', background: 'linear-gradient(to right, #fff, var(--text-secondary))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+      <main className="landing-main">
+        <div className="animate-fade-in hero-container">
+          <h1 className="hero-title">
             Сучасна платформа для вивчення C#
           </h1>
-          <p style={{ fontSize: '1.2rem', color: 'var(--text-muted)', marginBottom: '3rem', lineHeight: '1.6' }}>
+          <p className="hero-subtitle">
             Пройдіть шлях від основ синтаксису до просунутої розробки веб-сервісів та ігор. Пишіть код безпосередньо в браузері за допомогою нашого інтелектуального IDE та отримуйте зворотний зв'язок від викладачів.
           </p>
-          <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center' }}>
-            <button className="btn btn-primary" style={{ padding: '1rem 2rem', fontSize: '1.1rem' }} onClick={() => navigate('/login')}>
+          <div className="hero-buttons">
+            <button className="btn btn-primary hero-btn" onClick={() => navigate('/login')}>
               Почати навчання
               <ArrowRight size={20} />
             </button>
-            <button className="btn btn-secondary" style={{ padding: '1rem 2rem', fontSize: '1.1rem' }} onClick={() => navigate('/theory')}>
+            <button className="btn btn-secondary hero-btn" onClick={() => navigate('/theory')}>
               Дізнатися більше про C#
             </button>
           </div>

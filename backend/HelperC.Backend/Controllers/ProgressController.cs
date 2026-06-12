@@ -114,12 +114,11 @@ namespace HelperC.Backend.Controllers
 
         /// <summary>
         /// Фіксація успішного виконання практичного завдання в вбудованій IDE.
-        /// Зараховує модуль до списку завершених та перераховує загальний прогрес (%) студента.
+        /// Зберігає код студента та зараховує модуль.
         /// </summary>
         [HttpPost("task")]
-        public async Task<IActionResult> CompleteTask([FromBody] int moduleId)
+        public async Task<IActionResult> CompleteTask([FromBody] TaskCompletionDto dto)
         {
-            // Перевіряємо JWT токен та отримуємо ID користувача
             var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
             {
@@ -132,18 +131,35 @@ namespace HelperC.Backend.Controllers
                 return NotFound(new { message = "Користувача не знайдено" });
             }
 
-            var totalModulesCount = await _context.Modules.CountAsync();
-            if (totalModulesCount == 0)
+            // Save submissions
+            if (dto.Submissions != null && dto.Submissions.Any())
             {
-                totalModulesCount = 9; // Fallback
+                foreach (var sub in dto.Submissions)
+                {
+                    var submission = new TaskSubmission
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = userId,
+                        ModuleId = dto.ModuleId,
+                        TaskId = sub.TaskId,
+                        Code = sub.Code,
+                        IsSuccessful = sub.IsSuccessful,
+                        SubmittedAt = DateTime.UtcNow
+                    };
+                    _context.TaskSubmissions.Add(submission);
+                }
             }
 
-            if (!user.CompletedModules.Contains(moduleId))
+            var totalModulesCount = await _context.Modules.CountAsync();
+            if (totalModulesCount == 0) totalModulesCount = 9;
+
+            if (!user.CompletedModules.Contains(dto.ModuleId))
             {
-                user.CompletedModules.Add(moduleId);
+                user.CompletedModules.Add(dto.ModuleId);
                 user.Progress = (int)Math.Round((double)user.CompletedModules.Count / totalModulesCount * 100);
-                await _context.SaveChangesAsync();
             }
+
+            await _context.SaveChangesAsync();
 
             return Ok(new
             {
@@ -151,5 +167,18 @@ namespace HelperC.Backend.Controllers
                 completedModules = user.CompletedModules
             });
         }
+    }
+
+    public class TaskCompletionDto
+    {
+        public int ModuleId { get; set; }
+        public List<TaskSubmissionDto> Submissions { get; set; } = new();
+    }
+
+    public class TaskSubmissionDto
+    {
+        public int TaskId { get; set; }
+        public string Code { get; set; } = string.Empty;
+        public bool IsSuccessful { get; set; }
     }
 }

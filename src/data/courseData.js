@@ -96,7 +96,8 @@ namespace HelperPlatform
         }
     }
 }`,
-        referenceCode: null // Odd task (1st task) - No reference solution display
+        referenceCode: null,
+        expectedOutput: "Area: 55"
       },
       {
         id: 2,
@@ -145,7 +146,8 @@ namespace HelperPlatform
             }
         }
     }
-}` // Even task (2nd task) - Shows reference code
+}`,
+        expectedOutput: "1 is Odd"
       }
     ]
   },
@@ -227,7 +229,8 @@ namespace HelperPlatform
     // Оголосіть клас Car тут:
     
 }`,
-        referenceCode: null
+        referenceCode: null,
+        expectedOutput: "is driving!"
       },
       {
         id: 2,
@@ -286,7 +289,8 @@ namespace HelperPlatform
             Console.WriteLine("Bark");
         }
     }
-}`
+}`,
+        expectedOutput: "Bark"
       }
     ]
   },
@@ -388,7 +392,8 @@ namespace HelperPlatform
             Console.WriteLine(point.X); // Виведе 99
         }
     }
-}`
+}`,
+        expectedOutput: "99"
       }
     ]
   },

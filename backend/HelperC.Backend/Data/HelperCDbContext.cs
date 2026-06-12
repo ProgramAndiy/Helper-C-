@@ -15,6 +15,7 @@ namespace HelperC.Backend.Data
         public DbSet<Quiz> Quizzes { get; set; } = null!;
         public DbSet<CourseTask> Tasks { get; set; } = null!;
         public DbSet<QuizAttempt> QuizAttempts { get; set; } = null!;
+        public DbSet<TaskSubmission> TaskSubmissions { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

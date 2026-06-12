@@ -15,7 +15,7 @@ export default function AboutPage() {
         Дізнайтеся більше про нашу місію та філософію створення платформи.
       </p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem' }}>
+      <div className="grid-2-col">
         <div className="glass-panel" style={{ padding: '2.5rem' }}>
           <Target size={40} color="var(--primary)" style={{ marginBottom: '1.5rem' }} />
           <h2 style={{ marginBottom: '1rem' }}>Навіщо створено сайт?</h2>
