@@ -12,12 +12,15 @@ export function AuthProvider({ children }) {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Helper to attach authorization header
+  // Генерирує заголовки авторизації для HTTP-запитів до API.
+  // Додає JWT токен у форматі 'Bearer <token>' до заголовку Authorization, якщо токен є в сховищі.
   const getAuthHeaders = () => {
     const token = localStorage.getItem('token');
     return token ? { 'Authorization': `Bearer ${token}` } : {};
   };
 
+  // При завантаженні застосунку перевіряємо наявність JWT токену в локальному сховищі.
+  // Якщо токен знайдено, надсилаємо запит до бекенду (/api/auth/me) для перевірки його валідності та завантаження профілю.
   useEffect(() => {
     const loadCurrentUser = async () => {
       const token = localStorage.getItem('token');
@@ -45,6 +48,7 @@ export function AuthProvider({ children }) {
     loadCurrentUser();
   }, []);
 
+  // Авторизація користувача на C# бекенд-сервері та збереження отриманого JWT токена в localStorage.
   const login = async (email, password) => {
     const res = await fetch('/api/auth/login', {
       method: 'POST',

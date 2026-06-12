@@ -23,9 +23,15 @@ namespace HelperC.Backend.Controllers
             _context = context;
         }
 
+        /// <summary>
+        /// Серверна перевірка відповідей на тести.
+        /// Студент надсилає масив обраних індексів відповідей. Сервер самостійно звіряє їх 
+        /// з базою даних, виключаючи підробку балів на стороні клієнта.
+        /// </summary>
         [HttpPost("quiz")]
         public async Task<IActionResult> SubmitQuiz([FromBody] QuizSubmitDto dto)
         {
+            // Перевіряємо JWT токен та отримуємо ID користувача
             var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
             {
@@ -106,9 +112,14 @@ namespace HelperC.Backend.Controllers
             });
         }
 
+        /// <summary>
+        /// Фіксація успішного виконання практичного завдання в вбудованій IDE.
+        /// Зараховує модуль до списку завершених та перераховує загальний прогрес (%) студента.
+        /// </summary>
         [HttpPost("task")]
         public async Task<IActionResult> CompleteTask([FromBody] int moduleId)
         {
+            // Перевіряємо JWT токен та отримуємо ID користувача
             var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
             {

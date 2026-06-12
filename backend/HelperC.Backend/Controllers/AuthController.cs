@@ -28,15 +28,21 @@ namespace HelperC.Backend.Controllers
             _configuration = configuration;
         }
 
+        /// <summary>
+        /// Реєстрація нового користувача (студента або викладача).
+        /// Для викладача обов'язково перевіряється спеціальний секретний код доступу.
+        /// </summary>
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
+            // Перевіряємо унікальність пошти
             if (await _context.Users.AnyAsync(u => u.Email.ToLower() == dto.Email.ToLower()))
             {
                 return BadRequest(new { message = "Користувач з такою поштою вже існує" });
             }
 
             string userRole = "student";
+            // Якщо користувач реєструється як викладач, проводимо перевірку коду доступу з appsettings.json
             if (dto.Role?.ToLower() == "teacher")
             {
                 var secretCode = _configuration["TeacherRegistrationCode"] ?? "TeacherSecretCode123";
@@ -73,15 +79,21 @@ namespace HelperC.Backend.Controllers
             });
         }
 
+        /// <summary>
+        /// Авторизація користувача з перевіркою пароля через BCrypt.
+        /// При успішному вході генерується безпечний сесійний JWT токен.
+        /// </summary>
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
+            // Пошук користувача та безпечне порівняння хешу пароля через BCrypt
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == dto.Email.ToLower());
             if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
             {
                 return BadRequest(new { message = "Невірний email або пароль" });
             }
 
+            // Оновлюємо мітку останньої активності користувача
             user.LastActive = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
@@ -204,12 +216,17 @@ namespace HelperC.Backend.Controllers
             });
         }
 
+        /// <summary>
+        /// Генерація сесійного JWT токена для автентифікації клієнтських запитів.
+        /// Токен містить ідентифікатор, пошту та роль користувача.
+        /// </summary>
         private string GenerateJwtToken(User user)
         {
             var jwtSettings = _configuration.GetSection("JwtSettings");
             var secretKey = jwtSettings["Secret"] ?? "HelperCSharpSecretKeyWhichIsVeryLongAndSecure123!SuperSecureTokenKey";
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
 
+            // Додаємо Claims, які будуть зашифровані в токені
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
@@ -217,6 +234,7 @@ namespace HelperC.Backend.Controllers
                 new Claim(ClaimTypes.Role, user.Role)
             };
 
+            // Використовуємо алгоритм шифрування HMAC-SHA256
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
             var expires = DateTime.UtcNow.AddDays(Convert.ToDouble(jwtSettings["ExpiryInDays"] ?? "7"));
 
