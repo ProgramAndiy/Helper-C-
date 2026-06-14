@@ -236,7 +236,8 @@ export default function TestManagement() {
       description: 'Опис практичного завдання...',
       instructions: ['Оголосіть змінну...', 'Виведіть результат...'],
       initialCode: `using System;\n\nnamespace HelperPlatform\n{\n    class Program\n    {\n        static void Main(string[] args)\n        {\n            // Напишіть ваш код тут\n        }\n    }\n}`,
-      referenceCode: `using System;\n\nnamespace HelperPlatform\n{\n    class Program\n    {\n        static void Main(string[] args)\n        {\n            // Правильне вирішення тут\n        }\n    }\n}`
+      referenceCode: `using System;\n\nnamespace HelperPlatform\n{\n    class Program\n    {\n        static void Main(string[] args)\n        {\n            // Правильне вирішення тут\n        }\n    }\n}`,
+      expectedOutput: ''
     };
     setSelectedModule(prev => {
       const tasks = [...(prev.tasks || []), newTask];
@@ -265,7 +266,7 @@ export default function TestManagement() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', minHeight: 'calc(100vh - 120px)' }}>
       
       {/* Header section with Actions */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h2>Конструктор курсів (Course Builder)</h2>
           <p style={{ color: 'var(--text-muted)', margin: '0.2rem 0 0 0' }}>Керування лекціями, вхідними тестами та завданнями компілятора.</p>
@@ -289,10 +290,10 @@ export default function TestManagement() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '1.5rem', flex: 1, alignItems: 'stretch' }}>
+      <div className="flex-row-mobile-col" style={{ flex: 1, alignItems: 'stretch' }}>
         
         {/* Left column: Modules list */}
-        <div className="glass-panel" style={{ width: '280px', display: 'flex', flexDirection: 'column', padding: '1.5rem', gap: '1rem', flexShrink: 0 }}>
+        <div className="glass-panel admin-sidebar" style={{ display: 'flex', flexDirection: 'column', padding: '1.5rem', gap: '1rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.8rem' }}>
             <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>Модулі курсу</span>
             <button className="btn btn-secondary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.85rem' }} onClick={handleAddModule}>
@@ -422,10 +423,10 @@ export default function TestManagement() {
 
             {/* TAB CONTENT: Topics */}
             {activeTab === 'topics' && (
-              <div style={{ display: 'flex', gap: '1.5rem', flex: 1, minHeight: '350px' }}>
+              <div className="flex-row-mobile-col" style={{ flex: 1, minHeight: '350px' }}>
                 
                 {/* Topics Sidebar */}
-                <div style={{ width: '200px', display: 'flex', flexDirection: 'column', gap: '0.5rem', borderRight: '1px solid rgba(255,255,255,0.05)', paddingRight: '1rem', flexShrink: 0 }}>
+                <div className="admin-sidebar-sm" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', borderRight: '1px solid rgba(255,255,255,0.05)', paddingRight: '1rem' }}>
                   <button className="btn btn-secondary" style={{ padding: '0.5rem', fontSize: '0.85rem', width: '100%' }} onClick={handleAddTopic}>
                     <Plus size={14} /> Додати лекцію
                   </button>
@@ -495,10 +496,10 @@ export default function TestManagement() {
 
             {/* TAB CONTENT: Quizzes */}
             {activeTab === 'quizzes' && (
-              <div style={{ display: 'flex', gap: '1.5rem', flex: 1, minHeight: '350px' }}>
+              <div className="flex-row-mobile-col" style={{ flex: 1, minHeight: '350px' }}>
                 
                 {/* Quizzes Sidebar */}
-                <div style={{ width: '200px', display: 'flex', flexDirection: 'column', gap: '0.5rem', borderRight: '1px solid rgba(255,255,255,0.05)', paddingRight: '1rem', flexShrink: 0 }}>
+                <div className="admin-sidebar-sm" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', borderRight: '1px solid rgba(255,255,255,0.05)', paddingRight: '1rem' }}>
                   <button className="btn btn-secondary" style={{ padding: '0.5rem', fontSize: '0.85rem', width: '100%' }} onClick={handleAddQuiz}>
                     <Plus size={14} /> Додати питання
                   </button>
@@ -628,10 +629,10 @@ export default function TestManagement() {
 
             {/* TAB CONTENT: Tasks */}
             {activeTab === 'tasks' && (
-              <div style={{ display: 'flex', gap: '1.5rem', flex: 1, minHeight: '350px' }}>
+              <div className="flex-row-mobile-col" style={{ flex: 1, minHeight: '350px' }}>
                 
                 {/* Tasks Sidebar */}
-                <div style={{ width: '200px', display: 'flex', flexDirection: 'column', gap: '0.5rem', borderRight: '1px solid rgba(255,255,255,0.05)', paddingRight: '1rem', flexShrink: 0 }}>
+                <div className="admin-sidebar-sm" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', borderRight: '1px solid rgba(255,255,255,0.05)', paddingRight: '1rem' }}>
                   <button className="btn btn-secondary" style={{ padding: '0.5rem', fontSize: '0.85rem', width: '100%' }} onClick={handleAddTask}>
                     <Plus size={14} /> Додати завдання
                   </button>
@@ -735,6 +736,16 @@ export default function TestManagement() {
                           style={{ fontFamily: 'Consolas, monospace', fontSize: '13px' }}
                           value={selectedModule.tasks[activeSubItemIndex].referenceCode || ''} 
                           onChange={e => handleUpdateTask(activeSubItemIndex, 'referenceCode', e.target.value)} 
+                        />
+                      </div>
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <label className="input-label">Очікуваний вивід у консолі (обов'язково для автоматичної перевірки)</label>
+                        <input 
+                          type="text" 
+                          className="input-field" 
+                          value={selectedModule.tasks[activeSubItemIndex].expectedOutput || ''} 
+                          onChange={e => handleUpdateTask(activeSubItemIndex, 'expectedOutput', e.target.value)} 
+                          placeholder="Наприклад: Привіт Світ"
                         />
                       </div>
                     </div>

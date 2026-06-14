@@ -57,10 +57,10 @@ export default function AdminSettings() {
     <div style={{ maxWidth: '900px', margin: '0 auto' }}>
       <h2 style={{ marginBottom: '2rem' }}>Налаштування платформи</h2>
 
-      <div style={{ display: 'flex', gap: '2rem' }}>
+      <div className="flex-row-mobile-col">
         
         {/* Settings Sidebar */}
-        <div style={{ width: '250px', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <div className="admin-sidebar-sm" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           <button 
             className={`btn ${activeTab === 'profile' ? 'btn-secondary' : ''}`}
             style={{ justifyContent: 'flex-start', background: activeTab === 'profile' ? 'rgba(138,43,226,0.1)' : 'transparent', color: activeTab === 'profile' ? 'var(--primary)' : 'var(--text-secondary)' }}

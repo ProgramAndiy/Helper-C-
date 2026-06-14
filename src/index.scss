@@ -471,6 +471,22 @@ a:hover {
   }
 }
 
+.admin-sidebar {
+  width: 320px;
+  flex-shrink: 0;
+}
+
+.admin-sidebar-sm {
+  width: 250px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .admin-sidebar, .admin-sidebar-sm {
+    width: 100% !important;
+  }
+}
+
 /* Auth Page specific */
 @media (max-width: 768px) {
   .auth-form-row {

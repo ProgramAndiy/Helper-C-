@@ -157,7 +157,7 @@ export default function AdminDashboard() {
           
           {/* Dynamic Bar Chart */}
           <div style={{ overflowX: 'auto' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem', height: '250px', padding: '1rem 0', borderBottom: '1px solid rgba(255,255,255,0.1)', minWidth: '400px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem', height: '250px', padding: '1rem 0', borderBottom: '1px solid rgba(255,255,255,0.1)', minWidth: '100%' }}>
               {chartData.map((stat, i) => (
                 <div key={i} style={{ flex: '1', minWidth: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }} title={stat.fullTitle}>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{stat.value}%</span>

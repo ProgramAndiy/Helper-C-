@@ -98,9 +98,9 @@ export default function LessonPage() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
+      <div className="flex-row-mobile-col" style={{ alignItems: 'flex-start' }}>
         {/* Left column: Topic list */}
-        <div className="glass-panel" style={{ width: '320px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div className="glass-panel admin-sidebar" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{ padding: '1rem 1.5rem', background: 'rgba(0,0,0,0.2)', borderBottom: '1px solid rgba(255,255,255,0.05)', fontWeight: 'bold', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <BookOpen size={18} color="var(--primary)" />
             Теоретичні теми
