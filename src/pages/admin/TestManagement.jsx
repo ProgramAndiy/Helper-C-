@@ -354,7 +354,7 @@ export default function TestManagement() {
           <div className="glass-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '1.5rem', gap: '1.5rem', overflowY: 'auto' }}>
             
             {/* Tabs selector */}
-            <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
               {[
                 { id: 'general', name: 'Основні налаштування', icon: <FileText size={16} /> },
                 { id: 'topics', name: 'Теорія (Лекції)', icon: <BookOpen size={16} /> },

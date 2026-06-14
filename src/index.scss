@@ -42,6 +42,13 @@ body {
   min-height: 100vh;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+html {
+  overflow-x: hidden;
+  width: 100%;
 }
 
 /* Typography */
@@ -115,17 +122,21 @@ a:hover {
 .app-container {
   display: flex;
   min-height: 100vh;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 .main-content {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .content-wrapper {
   padding: 2rem;
   flex: 1;
+  min-width: 0;
 }
 
 /* Forms */
@@ -249,6 +260,7 @@ a:hover {
 
   .content-wrapper {
     padding: 1rem;
+    overflow-x: hidden;
   }
 
   h1 { font-size: 2rem; }
@@ -256,7 +268,7 @@ a:hover {
   h3 { font-size: 1.3rem; }
 
   .glass-panel {
-    padding: 1.5rem !important;
+    padding: 1rem !important;
   }
 }
 
