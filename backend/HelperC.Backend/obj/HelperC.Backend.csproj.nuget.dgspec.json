@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Андрій Тасуй\\Desktop\\HelperCSharp_Latest\\backend\\HelperC.Backend\\HelperC.Backend.csproj": {}
+    "c:\\Users\\Андрій Тасуй\\Desktop\\HelperCSharp_Latest\\backend\\HelperC.Backend\\HelperC.Backend.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Андрій Тасуй\\Desktop\\HelperCSharp_Latest\\backend\\HelperC.Backend\\HelperC.Backend.csproj": {
+    "c:\\Users\\Андрій Тасуй\\Desktop\\HelperCSharp_Latest\\backend\\HelperC.Backend\\HelperC.Backend.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Андрій Тасуй\\Desktop\\HelperCSharp_Latest\\backend\\HelperC.Backend\\HelperC.Backend.csproj",
+        "projectUniqueName": "c:\\Users\\Андрій Тасуй\\Desktop\\HelperCSharp_Latest\\backend\\HelperC.Backend\\HelperC.Backend.csproj",
         "projectName": "HelperC.Backend",
-        "projectPath": "C:\\Users\\Андрій Тасуй\\Desktop\\HelperCSharp_Latest\\backend\\HelperC.Backend\\HelperC.Backend.csproj",
+        "projectPath": "c:\\Users\\Андрій Тасуй\\Desktop\\HelperCSharp_Latest\\backend\\HelperC.Backend\\HelperC.Backend.csproj",
         "packagesPath": "C:\\Users\\Андрій Тасуй\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Андрій Тасуй\\Desktop\\HelperCSharp_Latest\\backend\\HelperC.Backend\\obj\\",
+        "outputPath": "c:\\Users\\Андрій Тасуй\\Desktop\\HelperCSharp_Latest\\backend\\HelperC.Backend\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Андрій Тасуй\\AppData\\Roaming\\NuGet\\NuGet.Config"

@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "9L3sz/x9f7A=",
+  "dgSpecHash": "VP7foD5rKYI=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Андрій Тасуй\\Desktop\\HelperCSharp_Latest\\backend\\HelperC.Backend\\HelperC.Backend.csproj",
+  "projectFilePath": "c:\\Users\\Андрій Тасуй\\Desktop\\HelperCSharp_Latest\\backend\\HelperC.Backend\\HelperC.Backend.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Андрій Тасуй\\.nuget\\packages\\bcrypt.net-next\\4.2.0\\bcrypt.net-next.4.2.0.nupkg.sha512",
     "C:\\Users\\Андрій Тасуй\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
