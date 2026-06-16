@@ -186,7 +186,7 @@ export default function TheoryLibrary() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg-primary)' }}>
-      <header className="dashboard-header" style={{ padding: '1rem 2rem', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '2rem', background: 'rgba(15, 12, 22, 0.9)', backdropFilter: 'blur(10px)', zIndex: 10 }}>
+      <header className="theory-header" style={{ padding: '1rem 2rem', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '2rem', background: 'rgba(15, 12, 22, 0.9)', backdropFilter: 'blur(10px)', zIndex: 10 }}>
         <button className="btn" style={{ background: 'transparent', color: 'var(--text-muted)', padding: 0 }} onClick={() => navigate(-1)}>
           <ArrowLeft size={20} /> Назад
         </button>

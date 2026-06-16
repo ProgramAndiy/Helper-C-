@@ -373,7 +373,8 @@ export default function TestManagement() {
                     fontSize: '0.95rem',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.5rem'
+                    gap: '0.5rem',
+                    flexShrink: 0
                   }}
                   onClick={() => {
                     setActiveTab(tab.id);

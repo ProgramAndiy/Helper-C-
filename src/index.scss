@@ -535,17 +535,23 @@ a:hover {
     width: 100% !important;
     border-right: none !important;
     border-bottom: 1px solid rgba(255,255,255,0.05);
-    max-height: 200px;
+    height: 85px;
     display: flex;
     flex-direction: row;
     overflow-x: auto;
     overflow-y: hidden;
+    background: rgba(15, 12, 22, 0.4);
+    -webkit-overflow-scrolling: touch;
   }
   .theory-sidebar > div {
     flex: 0 0 auto;
     width: 250px;
+    height: 100%;
+    padding: 0.6rem 1rem !important;
     border-bottom: none !important;
     border-right: 1px solid rgba(255,255,255,0.05);
+    display: flex !important;
+    align-items: center !important;
   }
   .theory-content {
     padding: 1.5rem 1rem !important;
