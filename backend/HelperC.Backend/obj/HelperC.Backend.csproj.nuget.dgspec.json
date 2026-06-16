@@ -1,25 +1,28 @@
 {
   "format": 1,
   "restore": {
-    "c:\\Users\\Андрій Тасуй\\Desktop\\HelperCSharp_Latest\\backend\\HelperC.Backend\\HelperC.Backend.csproj": {}
+    "C:\\Users\\User\\OneDrive\\Робочий стіл\\Helper-C--main\\backend\\HelperC.Backend\\HelperC.Backend.csproj": {}
   },
   "projects": {
-    "c:\\Users\\Андрій Тасуй\\Desktop\\HelperCSharp_Latest\\backend\\HelperC.Backend\\HelperC.Backend.csproj": {
+    "C:\\Users\\User\\OneDrive\\Робочий стіл\\Helper-C--main\\backend\\HelperC.Backend\\HelperC.Backend.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "c:\\Users\\Андрій Тасуй\\Desktop\\HelperCSharp_Latest\\backend\\HelperC.Backend\\HelperC.Backend.csproj",
+        "projectUniqueName": "C:\\Users\\User\\OneDrive\\Робочий стіл\\Helper-C--main\\backend\\HelperC.Backend\\HelperC.Backend.csproj",
         "projectName": "HelperC.Backend",
-        "projectPath": "c:\\Users\\Андрій Тасуй\\Desktop\\HelperCSharp_Latest\\backend\\HelperC.Backend\\HelperC.Backend.csproj",
-        "packagesPath": "C:\\Users\\Андрій Тасуй\\.nuget\\packages\\",
-        "outputPath": "c:\\Users\\Андрій Тасуй\\Desktop\\HelperCSharp_Latest\\backend\\HelperC.Backend\\obj\\",
+        "projectPath": "C:\\Users\\User\\OneDrive\\Робочий стіл\\Helper-C--main\\backend\\HelperC.Backend\\HelperC.Backend.csproj",
+        "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\User\\OneDrive\\Робочий стіл\\Helper-C--main\\backend\\HelperC.Backend\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\Андрій Тасуй\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
           "net9.0"
         ],
         "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {

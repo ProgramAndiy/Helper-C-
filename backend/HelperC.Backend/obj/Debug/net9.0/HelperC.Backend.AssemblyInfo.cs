@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("HelperC.Backend")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3bc9b50a38c3f0ed7149c7e4eee70b816dee8fef")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+289ebec31685614e211fd07c6b46aeb0cd933875")]
 [assembly: System.Reflection.AssemblyProductAttribute("HelperC.Backend")]
 [assembly: System.Reflection.AssemblyTitleAttribute("HelperC.Backend")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

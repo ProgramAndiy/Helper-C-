@@ -194,13 +194,16 @@ export default function LessonPage() {
           font-size: 0.95rem;
           border-radius: 0;
         }
-        .article-content .info-card {
+        .article-content .info-card, .article-content blockquote {
           background: rgba(138, 43, 226, 0.08);
           border-left: 4px solid var(--primary);
           padding: 1.2rem;
           border-radius: 4px;
           margin: 1.5rem 0;
           color: var(--text-primary);
+        }
+        .article-content blockquote p {
+          margin-bottom: 0;
         }
       `}</style>
     </div>
