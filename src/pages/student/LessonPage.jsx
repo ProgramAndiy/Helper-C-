@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, UserCircle, Code, BookOpen, ArrowRight } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { courseModules } from '../../data/courseData';
+import { marked } from 'marked';
 
 export default function LessonPage() {
   const navigate = useNavigate();
@@ -136,7 +137,7 @@ export default function LessonPage() {
             <div className="glass-panel animate-fade-in" style={{ padding: '2.5rem', marginBottom: '2rem', lineHeight: '1.8', fontSize: '1.1rem', color: 'var(--text-secondary)' }}>
               <div 
                 className="article-content"
-                dangerouslySetInnerHTML={{ __html: activeTopic.content }} 
+                dangerouslySetInnerHTML={{ __html: marked.parse(activeTopic.content || '') }} 
               />
             </div>
           ) : (
@@ -176,6 +177,22 @@ export default function LessonPage() {
           border-radius: 4px;
           color: var(--accent);
           font-family: monospace;
+        }
+        .article-content pre {
+          background: rgba(0, 0, 0, 0.4);
+          padding: 1.2rem;
+          border-radius: 6px;
+          overflow-x: auto;
+          margin-bottom: 1.5rem;
+          border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .article-content pre code {
+          background: transparent;
+          padding: 0;
+          color: var(--text-primary);
+          font-family: Consolas, monospace;
+          font-size: 0.95rem;
+          border-radius: 0;
         }
         .article-content .info-card {
           background: rgba(138, 43, 226, 0.08);

@@ -478,7 +478,7 @@ export default function TestManagement() {
                     </div>
                     
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                      <label className="input-label">HTML-контент лекції (з прикладами коду)</label>
+                      <label className="input-label">Контент лекції (підтримує Markdown та HTML)</label>
                       <textarea 
                         className="input-field" 
                         style={{ flex: 1, minHeight: '200px', fontFamily: 'Consolas, monospace', fontSize: '14px', resize: 'vertical' }} 
